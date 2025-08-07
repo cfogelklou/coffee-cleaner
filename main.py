@@ -9,6 +9,7 @@ import random
 import os
 import math
 import threading
+import shutil
 from concurrent.futures import ThreadPoolExecutor
 
 # Import our custom modules
@@ -242,6 +243,125 @@ def main(page: ft.Page):
         page, scan_results_list, scan_thread_state, scan_and_display
     )
 
+    # Confirmation UI elements (hidden by default)
+    confirmation_row = ft.Row(
+        controls=[
+            ft.Text("", expand=True),  # Confirmation message
+            ft.ElevatedButton(
+                text="Yes, Delete",
+                bgcolor=ft.Colors.RED_600,
+                color=ft.Colors.WHITE,
+                on_click=None,  # Will be set dynamically
+            ),
+            ft.ElevatedButton(
+                text="Cancel",
+                on_click=None,  # Will be set dynamically
+            ),
+        ],
+        visible=False,  # Hidden by default
+        alignment=ft.MainAxisAlignment.CENTER,
+        spacing=10,
+    )
+
+    def show_confirmation_ui(selected_items):
+        """Show inline confirmation UI instead of modal dialog."""
+        debug_log(f"Showing confirmation UI for {len(selected_items)} items")
+        
+        # Update confirmation message
+        if len(selected_items) == 1:
+            message = f"Delete '{os.path.basename(selected_items[0]['path'])}'?"
+        else:
+            message = f"Delete {len(selected_items)} selected items?"
+        
+        confirmation_row.controls[0].value = message
+        
+        # Set up Yes button
+        def confirm_deletion(e):
+            debug_log("User confirmed deletion")
+            confirmation_row.visible = False
+            delete_button.visible = True
+            page.update()
+            
+            # Perform the actual deletion
+            perform_deletion(selected_items)
+        
+        # Set up Cancel button  
+        def cancel_deletion(e):
+            debug_log("User cancelled deletion")
+            confirmation_row.visible = False
+            delete_button.visible = True
+            page.update()
+        
+        confirmation_row.controls[1].on_click = confirm_deletion
+        confirmation_row.controls[2].on_click = cancel_deletion
+        
+        # Show confirmation UI and hide delete button
+        confirmation_row.visible = True
+        delete_button.visible = False
+        page.update()
+
+    def perform_deletion(selected_items):
+        """Actually delete the selected files and show results."""
+        debug_log(f"Performing deletion of {len(selected_items)} items")
+        
+        deletion_results = []
+        for item in selected_items:
+            try:
+                path = item['path']
+                if os.path.isdir(path):
+                    shutil.rmtree(path)
+                else:
+                    os.remove(path)
+                deletion_results.append(f"✓ Deleted: {os.path.basename(path)}")
+                debug_log(f"Successfully deleted: {path}")
+            except Exception as ex:
+                error_msg = f"✗ Failed to delete {os.path.basename(item['path'])}: {str(ex)}"
+                deletion_results.append(error_msg)
+                debug_log(f"Failed to delete {item['path']}: {ex}")
+        
+        # Show results in scan status
+        scan_status_text.value = f"Deletion complete. {'\n'.join(deletion_results[:3])}"
+        if len(deletion_results) > 3:
+            scan_status_text.value += f"\n... and {len(deletion_results) - 3} more results"
+        
+        # Refresh the current directory
+        scan_and_display(scan_thread_state["current_path"])
+
+    def simple_delete_selected_handler(e):
+        """Handle delete button click with inline confirmation."""
+        debug_log("Delete button clicked")
+        
+        selected_items = []
+        unsafe_items = []
+        
+        # Collect selected items and check safety
+        for control in scan_results_list.controls:
+            if hasattr(control, 'trailing') and hasattr(control.trailing, 'controls'):
+                trailing_controls = control.trailing.controls
+                if len(trailing_controls) > 0 and isinstance(trailing_controls[0], ft.Checkbox):
+                    checkbox = trailing_controls[0]
+                    if checkbox.value and hasattr(control, 'data'):
+                        path = control.data
+                        safety_info = get_safety_info(path)
+                        selected_items.append({"path": path, "safety": safety_info['safety']})
+                        
+                        if safety_info['safety'] == 'red':
+                            unsafe_items.append(path)
+        
+        if not selected_items:
+            scan_status_text.value = "No items selected for deletion."
+            page.update()
+            return
+        
+        if unsafe_items:
+            unsafe_names = [os.path.basename(p) for p in unsafe_items]
+            scan_status_text.value = f"Cannot delete unsafe items (red): {', '.join(unsafe_names)}"
+            page.update()
+            return
+        
+        # Show inline confirmation
+        show_confirmation_ui(selected_items)
+
     def display_scan_results(results, current_path):
         scan_results_list.controls.clear()
         update_breadcrumbs(current_path)
@@ -415,10 +535,10 @@ def main(page: ft.Page):
     scan_button = ft.ElevatedButton(text="Scan", on_click=scan_directory_handler)
     cancel_button = ft.ElevatedButton(text="Cancel", on_click=cancel_scan_handler, disabled=True)
     
-    debug_log("Creating delete button with handler")
+    debug_log("Creating delete button with simple handler")
     delete_button = ft.ElevatedButton(
         text="Delete Selected",
-        on_click=delete_selected_handler,
+        on_click=simple_delete_selected_handler,
         disabled=True,
         bgcolor=ft.Colors.RED_400,
         color=ft.Colors.WHITE,
@@ -446,6 +566,7 @@ def main(page: ft.Page):
                 padding=10,
                 expand=True,
             ),
+            confirmation_row,  # Add confirmation UI
             ft.Row(
                 [delete_button],
                 alignment=ft.MainAxisAlignment.CENTER,

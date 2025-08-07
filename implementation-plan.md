@@ -75,15 +75,17 @@ This plan adheres to the specifications outlined in `GEMINI.md` and `.github/cop
     -   Add an icon to trigger the AI analysis for items with unknown safety.
 -   **Status:** 🚧 Code exists but **needs user verification** - safety dots and AI analysis icons need to be tested. Currently using placeholder AI analysis, real Gemini API integration pending.
 
-### Step 7: Deletion Logic 🚧 **IN PROGRESS - DIALOG ISSUES FOUND**
+### Step 7: Deletion Logic 🚧 **IN PROGRESS - IMPLEMENTING INLINE CONFIRMATION**
 
 -   **Goal:** Implement the file deletion functionality for the Disk Analyzer.
 -   **Tasks:**
     -   Implement the `delete_selected_items(paths)` function.
     -   The "Delete Selected" button should be disabled if any of the selected items are marked as "red" (unsafe to delete).
-    -   ~~Use AlertDialog for deletion confirmation~~ **ISSUE:** Flet AlertDialog not displaying properly
-    -   **NEW APPROACH:** Use inline confirmation UI with Yes/No buttons instead of modal dialog
--   **Status:** 🚧 Core deletion logic implemented, but modal dialog confirmation not working. Switching to inline confirmation approach.
+    -   ~~Use AlertDialog for deletion confirmation~~ **ISSUE:** Flet AlertDialog not displaying properly across different versions
+    -   **NEW APPROACH:** Use inline confirmation UI with Yes/No buttons at the bottom instead of modal dialog
+    -   When "Delete Selected" is clicked, show confirmation row with selected file count and Yes/No buttons
+    -   Only show confirmation UI when deletion is requested, hide it after confirmation or cancellation
+-   **Status:** 🚧 Core deletion logic exists. Implementing simple inline confirmation UI to replace problematic modal dialogs.
 
 ### Step 8: CI/CD Setup ✅ **COMPLETED**
 
