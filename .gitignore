@@ -1,0 +1,11 @@
+# Python virtual environments
+venv/
+ENV/
+env/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+
+# Optional pip environment files
+Pipfile.lock
