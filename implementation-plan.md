@@ -75,13 +75,15 @@ This plan adheres to the specifications outlined in `GEMINI.md` and `.github/cop
     -   Add an icon to trigger the AI analysis for items with unknown safety.
 -   **Status:** 🚧 Code exists but **needs user verification** - safety dots and AI analysis icons need to be tested. Currently using placeholder AI analysis, real Gemini API integration pending.
 
-### Step 7: Deletion Logic 🚧 **IN PROGRESS - NEEDS VERIFICATION**
+### Step 7: Deletion Logic 🚧 **IN PROGRESS - DIALOG ISSUES FOUND**
 
 -   **Goal:** Implement the file deletion functionality for the Disk Analyzer.
 -   **Tasks:**
     -   Implement the `delete_selected_items(paths)` function.
     -   The "Delete Selected" button should be disabled if any of the selected items are marked as "red" (unsafe to delete).
--   **Status:** 🚧 Code exists but **needs user verification** - deletion functionality and safety checks need to be tested
+    -   ~~Use AlertDialog for deletion confirmation~~ **ISSUE:** Flet AlertDialog not displaying properly
+    -   **NEW APPROACH:** Use inline confirmation UI with Yes/No buttons instead of modal dialog
+-   **Status:** 🚧 Core deletion logic implemented, but modal dialog confirmation not working. Switching to inline confirmation approach.
 
 ### Step 8: CI/CD Setup ✅ **COMPLETED**
 
@@ -122,11 +124,12 @@ The following features have been implemented in code but need user testing to ve
 - Look for and test AI analysis icons (brain/psychology icon) for unknown files
 - Click AI analysis icons to trigger analysis
 
-### 3. Test Deletion Logic (Step 7)
+### 3. Test Deletion Logic (Step 7) - **UPDATED APPROACH**
 - Select files/folders using checkboxes in the file list
 - Verify the "Delete Selected" button enables when items are selected
 - Verify the button is disabled when unsafe (red) items are selected
-- Test the deletion confirmation dialog
+- ~~Test the deletion confirmation dialog~~ **ISSUE FOUND:** Flet dialog not displaying
+- **NEW:** Test inline confirmation UI with Yes/No buttons at bottom of screen
 - Test actual file deletion (use caution - start with test files)
 
 **NEXT DEVELOPMENT PRIORITY:**

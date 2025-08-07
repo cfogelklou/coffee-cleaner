@@ -19,6 +19,15 @@ def show_confirmation_dialog(page, items_to_delete, on_confirm_callback):
         debug_log("No items to delete - returning early")
         return
 
+    def handle_yes(e):
+        debug_log("User clicked YES in confirmation dialog")
+        page.close_dialog()
+        on_confirm_callback(items_to_delete)
+
+    def handle_no(e):
+        debug_log("User clicked NO in confirmation dialog")
+        page.close_dialog()
+
     # Create file list text
     file_list = "\n".join([f"• {os.path.basename(item)}" for item in items_to_delete[:10]])
     if len(items_to_delete) > 10:
@@ -28,36 +37,19 @@ def show_confirmation_dialog(page, items_to_delete, on_confirm_callback):
 
     debug_log(f"Dialog content: {content_text[:100]}...")
 
-    # Create dialog first
     confirmation_dialog = ft.AlertDialog(
         modal=True,
         title=ft.Text("Confirm Deletion"),
         content=ft.Text(content_text),
-        actions=[],  # Will be set after defining handlers
+        actions=[
+            ft.TextButton("Cancel", on_click=handle_no),
+            ft.TextButton("Delete", on_click=handle_yes),
+        ],
         actions_alignment=ft.MainAxisAlignment.END,
     )
 
-    def handle_yes(e):
-        debug_log("User clicked YES in confirmation dialog")
-        confirmation_dialog.open = False
-        page.update()
-        on_confirm_callback(items_to_delete)
-
-    def handle_no(e):
-        debug_log("User clicked NO in confirmation dialog")
-        confirmation_dialog.open = False
-        page.update()
-
-    # Set actions after handlers are defined
-    confirmation_dialog.actions = [
-        ft.TextButton("Cancel", on_click=handle_no),
-        ft.TextButton("Delete", on_click=handle_yes),
-    ]
-
-    debug_log("Setting page.dialog and opening...")
-    page.dialog = confirmation_dialog
-    confirmation_dialog.open = True
-    page.update()
+    debug_log("Showing dialog with page.show_dialog()...")
+    page.show_dialog(confirmation_dialog)
     debug_log("Confirmation dialog should now be visible")
     debug_log(f"Dialog object: {confirmation_dialog}")
     debug_log(f"Dialog modal: {confirmation_dialog.modal}")
