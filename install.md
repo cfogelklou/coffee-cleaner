@@ -40,3 +40,9 @@ Once the dependencies are installed, you can run the application:
 ```bash
 python main.py
 ```
+
+or 
+
+```bash
+venv/bin/python main.py
+```
