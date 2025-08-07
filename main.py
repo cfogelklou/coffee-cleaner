@@ -415,7 +415,8 @@ def main(page: ft.Page):
                                         ai_icon.tooltip = result["reason"]
                                     page.update()
 
-                        page.run_thread_safe(update_ui)
+                        # Call update_ui directly - Flet handles thread safety
+                        update_ui()
 
                     threading.Thread(target=analyze, daemon=True).start()
 
@@ -459,18 +460,21 @@ def main(page: ft.Page):
 
             trailing_row = ft.Row(controls=[checkbox, ai_icon], tight=True, spacing=4)
 
+            # Create proper click handler with closure
+            def create_directory_click_handler(path, is_directory):
+                if is_directory:
+                    return lambda _: scan_and_display(path)
+                else:
+                    return None
+
             list_tile = ft.ListTile(
                 title=ft.Text(os.path.basename(item["path"])),
                 subtitle=ft.Text(format_size(item["size"])),
                 leading=leading_row,
                 trailing=trailing_row,
-                on_click=lambda _, p=item["path"]: (scan_and_display(p) if is_dir else None),
+                on_click=create_directory_click_handler(item["path"], is_dir),
                 data=item["path"],  # Store path for reference
             )
-
-            # Only make directories clickable for navigation
-            if not is_dir:
-                list_tile.on_click = None
 
             scan_results_list.controls.append(list_tile)
 

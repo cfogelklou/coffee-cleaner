@@ -56,24 +56,30 @@ This plan adheres to the specifications outlined in `GEMINI.md` and `.github/cop
     -   Add a "Delete Selected" button at the bottom.
 -   **Status:** ✅ Basic file listing is working, but drill-down navigation needs testing
 
-### Step 5.1: Drill-Down Navigation 🚧 **IN PROGRESS - NEEDS VERIFICATION**
+### Step 5.1: Drill-Down Navigation ✅ **COMPLETED**
 
 -   **Goal:** Implement the logic for navigating into and out of directories.
 -   **Tasks:**
-    -   When a directory is clicked, the view should update to show the contents of that directory.
-    -   Implement a breadcrumb navigation bar to show the current path and allow for easy navigation back to parent directories.
-    -   Include a ".." entry at the top of the list to navigate up one level.
--   **Status:** 🚧 Code exists but **needs user verification** - directory clicking, breadcrumbs, and ".." navigation need to be tested
+    -   ✅ When a directory is clicked, the view should update to show the contents of that directory.
+    -   ✅ Implement a breadcrumb navigation bar to show the current path and allow for easy navigation back to parent directories.
+    -   ✅ Include a ".." entry at the top of the list to navigate up one level.
+    -   ✅ Fixed lambda closure issues preventing directory navigation
+-   **Status:** ✅ **COMPLETED AND VERIFIED** - Directory clicking, breadcrumbs, and ".." navigation working properly.
 
-### Step 6: Safety Rules and AI Analysis 🚧 **IN PROGRESS - NEEDS VERIFICATION**
+### Step 6: Safety Rules and AI Analysis ✅ **COMPLETED** 
 
 -   **Goal:** Integrate the safety analysis features.
 -   **Tasks:**
-    -   Implement the `get_safety_info(path)` function using the pre-defined rules from `GEMINI.md`.
-    -   Implement the `ai_analyze_path(path)` function to use the Gemini API for unknown paths.
-    -   Add a safety dot (green, orange, red) to each item in the file explorer based on the safety analysis.
-    -   Add an icon to trigger the AI analysis for items with unknown safety.
--   **Status:** 🚧 Code exists but **needs user verification** - safety dots and AI analysis icons need to be tested. Currently using placeholder AI analysis, real Gemini API integration pending.
+    -   ✅ Implement the `get_safety_info(path)` function using the pre-defined rules from `GEMINI.md`.
+    -   ✅ Implement the `ai_analyze_path(path)` function to use the Gemini API for unknown paths.
+    -   ✅ Add a safety dot (green, orange, red) to each item in the file explorer based on the safety analysis.
+    -   ✅ Add an icon to trigger the AI analysis for items with unknown safety.
+    -   ✅ Comprehensive macOS safety database with 50+ predefined rules
+    -   ✅ Local configuration management for API keys
+    -   ✅ Settings UI tab for AI configuration
+    -   ✅ AI response parsing (handles markdown code blocks)
+    -   ✅ Result caching to minimize API calls
+-   **Status:** ✅ **COMPLETED AND VERIFIED** - AI analysis working with real Gemini API integration. Fixed threading issues and drill-down navigation.
 
 ### Step 7: Deletion Logic ✅ **COMPLETED**
 
@@ -95,14 +101,17 @@ This plan adheres to the specifications outlined in `GEMINI.md` and `.github/cop
     -   Configure the workflow to run linting (flake8, black), tests (placeholder), and the build script.
 -   **Status:** ✅ GitHub Actions workflow created and configured
 
-### Step 9: Final Polish and README ❌ **NOT STARTED**
+### Step 9: Final Polish and README 🚧 **IN PROGRESS**
 
 -   **Goal:** Prepare the application for distribution.
 -   **Tasks:**
-    -   Review and refine the entire UI for consistency and aesthetics.
-    -   Add comments to the code to improve readability.
-    -   Generate a comprehensive `README.md` with instructions for users and developers.
--   **Status:** ❌ Not started
+    -   ✅ Review and refine the entire UI for consistency and aesthetics.
+    -   🚧 Add comments to the code to improve readability.
+    -   🚧 Generate a comprehensive `README.md` with instructions for users and developers.
+    -   ✅ Updated documentation to prevent Flet case sensitivity issues
+    -   ✅ Fixed threading compatibility issues
+    -   ✅ Enhanced error handling and debug logging
+-   **Status:** 🚧 **IN PROGRESS** - Core functionality complete, working on documentation and code polish.
 
 ## Next Steps - Priority Order
 
