@@ -51,7 +51,7 @@ PREDEFINED_RULES = {
 ```
 
 ### Functions
-- `scan_directory(path)`: Scans a directory and returns its contents sorted by size.
+- `scan_directory(path)`: Scans a directory using 4 worker threads to improve performance and returns its contents sorted by size. The scan can be cancelled by the user.
 - `get_safety_info(path)`: Checks pre-defined rules and a local cache to determine a path's safety.
 - `ai_analyze_path(path)`: Uses the Gemini API to analyze unknown paths and caches the result.
 - `delete_selected_items(paths)`: Deletes user-selected files and folders safely.
