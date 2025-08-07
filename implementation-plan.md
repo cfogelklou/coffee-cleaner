@@ -52,8 +52,18 @@ This plan adheres to the specifications outlined in `GEMINI.md` and ` .github/co
 -   **Tasks:**
     -   Create a file explorer view to display the scanned files and folders.
     -   Each item in the list should have a checkbox, an icon, the file/folder name, and its size.
+    -   Make directory entries clickable to allow for drilling down into subdirectories.
     -   Add a "Delete Selected" button at the bottom.
 -   **User Verification:** The user will verify that the scan results are displayed correctly in the file explorer.
+
+### Step 5.1: Drill-Down Navigation
+
+-   **Goal:** Implement the logic for navigating into and out of directories.
+-   **Tasks:**
+    -   When a directory is clicked, the view should update to show the contents of that directory.
+    -   Implement a breadcrumb navigation bar to show the current path and allow for easy navigation back to parent directories.
+    -   Include a ".." entry at the top of the list to navigate up one level.
+-   **User Verification:** The user will test the drill-down functionality, the breadcrumb navigation, and the ".." entry.
 
 ### Step 6: Safety Rules and AI Analysis
 
