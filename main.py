@@ -16,6 +16,8 @@ from concurrent.futures import ThreadPoolExecutor
 from config import debug_log
 from safety_analysis import get_safety_info, get_safety_color, ai_analyze_path
 from deletion import create_deletion_manager
+from config_manager import config_manager
+from config_manager import config_manager
 
 
 def main(page: ft.Page):
@@ -577,6 +579,338 @@ def main(page: ft.Page):
         expand=True,
     )
 
+    # --- Settings Tab --- #
+    
+    # API Key input fields
+    gemini_api_key_field = ft.TextField(
+        label="Gemini API Key",
+        password=True,
+        value=config_manager.get_gemini_api_key() or "",
+        width=400,
+        helper_text="Enter your Google Gemini API key for AI analysis"
+    )
+    
+    openai_api_key_field = ft.TextField(
+        label="OpenAI API Key",
+        password=True,
+        value=config_manager.get_openai_api_key() or "",
+        width=400,
+        helper_text="Enter your OpenAI API key for AI analysis"
+    )
+    
+    # AI Provider selection
+    ai_provider_dropdown = ft.Dropdown(
+        label="AI Provider",
+        options=[
+            ft.dropdown.Option("gemini", "Google Gemini"),
+            ft.dropdown.Option("openai", "OpenAI GPT"),
+        ],
+        value=config_manager.get_preferred_ai_provider(),
+        width=200
+    )
+    
+    # AI enabled checkbox
+    ai_enabled_checkbox = ft.Checkbox(
+        label="Enable AI Analysis",
+        value=config_manager.is_ai_analysis_enabled(),
+    )
+    
+    # Status text for settings
+    settings_status_text = ft.Text("Configure your API keys to enable AI-powered safety analysis.")
+    
+    def save_settings(e):
+        """Save settings to config file."""
+        debug_log("Saving settings...")
+        
+        # Save API keys
+        gemini_key = gemini_api_key_field.value.strip()
+        openai_key = openai_api_key_field.value.strip()
+        
+        if gemini_key:
+            config_manager.set_gemini_api_key(gemini_key)
+        if openai_key:
+            config_manager.set_openai_api_key(openai_key)
+        
+        # Save other settings
+        config_manager.set_preferred_ai_provider(ai_provider_dropdown.value)
+        config_manager.set_ai_analysis_enabled(ai_enabled_checkbox.value)
+        
+        settings_status_text.value = "✓ Settings saved successfully!"
+        settings_status_text.color = ft.Colors.GREEN
+        page.update()
+        
+        # Clear success message after 3 seconds
+        def clear_status():
+            time.sleep(3)
+            settings_status_text.value = "Configure your API keys to enable AI-powered safety analysis."
+            settings_status_text.color = None
+            page.update()
+        
+        threading.Thread(target=clear_status, daemon=True).start()
+    
+    def test_api_key(provider):
+        """Test API key functionality."""
+        def test():
+            settings_status_text.value = f"Testing {provider} API key..."
+            settings_status_text.color = ft.Colors.BLUE
+            page.update()
+            
+            try:
+                # Test with a simple analysis
+                result = ai_analyze_path("/tmp/test", force_provider=provider)
+                if result and "error" not in result.get("reason", "").lower():
+                    settings_status_text.value = f"✓ {provider} API key is working!"
+                    settings_status_text.color = ft.Colors.GREEN
+                else:
+                    settings_status_text.value = f"✗ {provider} API key test failed."
+                    settings_status_text.color = ft.Colors.RED
+            except Exception as ex:
+                settings_status_text.value = f"✗ {provider} API test error: {str(ex)}"
+                settings_status_text.color = ft.Colors.RED
+            
+            page.update()
+        
+        threading.Thread(target=test, daemon=True).start()
+    
+    save_settings_button = ft.ElevatedButton(
+        text="Save Settings",
+        on_click=save_settings,
+        bgcolor=ft.Colors.BLUE_400,
+        color=ft.Colors.WHITE
+    )
+    
+    test_gemini_button = ft.ElevatedButton(
+        text="Test Gemini",
+        on_click=lambda e: test_api_key("gemini"),
+        bgcolor=ft.Colors.GREEN_400,
+        color=ft.Colors.WHITE
+    )
+    
+    test_openai_button = ft.ElevatedButton(
+        text="Test OpenAI", 
+        on_click=lambda e: test_api_key("openai"),
+        bgcolor=ft.Colors.GREEN_400,
+        color=ft.Colors.WHITE
+    )
+    
+    settings_tab = ft.Column(
+        controls=[
+            ft.Text("AI Analysis Settings", size=24, weight=ft.FontWeight.BOLD),
+            ft.Divider(),
+            
+            ft.Text("API Configuration", size=18, weight=ft.FontWeight.W_500),
+            ai_enabled_checkbox,
+            ai_provider_dropdown,
+            
+            ft.Container(height=20),  # Spacing
+            
+            ft.Text("API Keys", size=18, weight=ft.FontWeight.W_500),
+            ft.Text("Get your API keys from:", size=14),
+            ft.Text("• Gemini: https://makersuite.google.com/app/apikey", size=12),
+            ft.Text("• OpenAI: https://platform.openai.com/api-keys", size=12),
+            
+            ft.Container(height=10),  # Spacing
+            
+            gemini_api_key_field,
+            ft.Row([test_gemini_button], alignment=ft.MainAxisAlignment.START),
+            
+            ft.Container(height=10),  # Spacing
+            
+            openai_api_key_field,
+            ft.Row([test_openai_button], alignment=ft.MainAxisAlignment.START),
+            
+            ft.Container(height=20),  # Spacing
+            
+            ft.Row([save_settings_button], alignment=ft.MainAxisAlignment.CENTER),
+            settings_status_text,
+            
+            ft.Container(height=20),  # Spacing
+            
+            ft.Text("How it works:", size=16, weight=ft.FontWeight.W_500),
+            ft.Text("• Files are first checked against a comprehensive built-in database", size=12),
+            ft.Text("• Unknown files are analyzed using AI to determine safety level", size=12),
+            ft.Text("• Results are cached locally to avoid repeated API calls", size=12),
+            ft.Text("• AI analysis helps identify safe-to-delete files you might not know about", size=12),
+        ],
+        spacing=10,
+        alignment=ft.MainAxisAlignment.START,
+        scroll=ft.ScrollMode.AUTO,
+    )
+
+    # --- Settings Tab --- #
+    
+    # API Key input fields
+    gemini_key_field = ft.TextField(
+        label="Gemini API Key",
+        password=True,
+        value=config_manager.get_gemini_api_key(),
+        width=400,
+        hint_text="Enter your Google Gemini API key"
+    )
+    
+    openai_key_field = ft.TextField(
+        label="OpenAI API Key", 
+        password=True,
+        value=config_manager.get_openai_api_key(),
+        width=400,
+        hint_text="Enter your OpenAI API key"
+    )
+    
+    # AI Provider selection
+    ai_provider_dropdown = ft.Dropdown(
+        label="Preferred AI Provider",
+        width=200,
+        value=config_manager.get_preferred_ai_provider(),
+        options=[
+            ft.dropdown.Option("gemini", "Google Gemini"),
+            ft.dropdown.Option("openai", "OpenAI GPT"),
+        ],
+    )
+    
+    # AI Analysis toggle
+    ai_analysis_switch = ft.Switch(
+        label="Enable AI Analysis",
+        value=config_manager.is_ai_analysis_enabled(),
+    )
+    
+    # Status messages for settings
+    settings_status = ft.Text("", color=ft.Colors.GREEN)
+    
+    def save_settings(e):
+        """Save all settings to configuration."""
+        try:
+            # Save API keys
+            config_manager.set_gemini_api_key(gemini_key_field.value or "")
+            config_manager.set_openai_api_key(openai_key_field.value or "")
+            
+            # Save provider preference
+            config_manager.set_preferred_ai_provider(ai_provider_dropdown.value)
+            
+            # Save AI analysis setting
+            config_manager.set_ai_analysis_enabled(ai_analysis_switch.value)
+            
+            # Update status
+            settings_status.value = "✓ Settings saved successfully!"
+            settings_status.color = ft.Colors.GREEN
+            
+            debug_log("Settings saved successfully")
+            
+        except Exception as ex:
+            settings_status.value = f"✗ Error saving settings: {str(ex)}"
+            settings_status.color = ft.Colors.RED
+            debug_log(f"Error saving settings: {ex}")
+        
+        page.update()
+    
+    def test_ai_connection(e):
+        """Test the AI connection with current settings."""
+        settings_status.value = "Testing AI connection..."
+        settings_status.color = ft.Colors.BLUE
+        page.update()
+        
+        try:
+            # Save current settings first
+            save_settings(None)
+            
+            # Test with a simple path
+            test_path = "/tmp/test_file.txt"
+            result = ai_analyze_path(test_path)
+            
+            if result and "reason" in result:
+                settings_status.value = "✓ AI connection successful!"
+                settings_status.color = ft.Colors.GREEN
+                debug_log("AI connection test successful")
+            else:
+                settings_status.value = "✗ AI connection failed - check your API key"
+                settings_status.color = ft.Colors.RED
+                debug_log("AI connection test failed")
+                
+        except Exception as ex:
+            settings_status.value = f"✗ AI connection error: {str(ex)}"
+            settings_status.color = ft.Colors.RED
+            debug_log(f"AI connection test error: {ex}")
+        
+        page.update()
+    
+    def clear_ai_cache(e):
+        """Clear the AI analysis cache."""
+        try:
+            cache_size = config_manager.get_cache_size()
+            config_manager.clear_cache()
+            settings_status.value = f"✓ Cleared {cache_size} cached AI analysis results"
+            settings_status.color = ft.Colors.GREEN
+            debug_log(f"Cleared AI cache ({cache_size} items)")
+        except Exception as ex:
+            settings_status.value = f"✗ Error clearing cache: {str(ex)}"
+            settings_status.color = ft.Colors.RED
+            debug_log(f"Error clearing cache: {ex}")
+        
+        page.update()
+    
+    # Settings buttons
+    save_button = ft.ElevatedButton(
+        text="Save Settings",
+        on_click=save_settings,
+        bgcolor=ft.Colors.BLUE_400,
+        color=ft.Colors.WHITE
+    )
+    
+    test_button = ft.ElevatedButton(
+        text="Test AI Connection",
+        on_click=test_ai_connection
+    )
+    
+    clear_cache_button = ft.ElevatedButton(
+        text="Clear AI Cache",
+        on_click=clear_ai_cache
+    )
+    
+    # Information text
+    api_info_text = ft.Text(
+        "API Keys are stored locally in user_config.json and are not shared.\n\n" +
+        "• Gemini: Get your API key from https://makersuite.google.com/app/apikey\n" +
+        "• OpenAI: Get your API key from https://platform.openai.com/api-keys\n\n" +
+        "AI analysis is used for unknown file types not in our safety database.",
+        size=12,
+        color=ft.Colors.GREY_700
+    )
+    
+    settings_tab = ft.Column(
+        controls=[
+            ft.Text("AI Configuration", size=18, weight=ft.FontWeight.BOLD),
+            ft.Divider(),
+            
+            # API Keys section
+            ft.Text("API Keys", size=14, weight=ft.FontWeight.BOLD),
+            gemini_key_field,
+            openai_key_field,
+            
+            ft.Divider(),
+            
+            # Settings section
+            ft.Text("Preferences", size=14, weight=ft.FontWeight.BOLD),
+            ai_provider_dropdown,
+            ai_analysis_switch,
+            
+            ft.Divider(),
+            
+            # Action buttons
+            ft.Row(
+                controls=[save_button, test_button, clear_cache_button],
+                alignment=ft.MainAxisAlignment.START,
+                spacing=10
+            ),
+            
+            # Status and info
+            settings_status,
+            ft.Divider(),
+            api_info_text,
+        ],
+        spacing=10,
+        scroll=ft.ScrollMode.AUTO,
+        alignment=ft.MainAxisAlignment.START,
+    )
+
     # --- Main Layout --- #
     tabs = ft.Tabs(
         selected_index=0,
@@ -584,6 +918,7 @@ def main(page: ft.Page):
         tabs=[
             ft.Tab(text="Quick Clean", content=quick_clean_tab),
             ft.Tab(text="Disk Analyzer", content=disk_analyzer_tab),
+            ft.Tab(text="Settings", content=settings_tab),
         ],
         expand=True,
     )

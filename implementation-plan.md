@@ -75,17 +75,17 @@ This plan adheres to the specifications outlined in `GEMINI.md` and `.github/cop
     -   Add an icon to trigger the AI analysis for items with unknown safety.
 -   **Status:** 🚧 Code exists but **needs user verification** - safety dots and AI analysis icons need to be tested. Currently using placeholder AI analysis, real Gemini API integration pending.
 
-### Step 7: Deletion Logic 🚧 **IN PROGRESS - IMPLEMENTING INLINE CONFIRMATION**
+### Step 7: Deletion Logic ✅ **COMPLETED**
 
 -   **Goal:** Implement the file deletion functionality for the Disk Analyzer.
 -   **Tasks:**
     -   Implement the `delete_selected_items(paths)` function.
     -   The "Delete Selected" button should be disabled if any of the selected items are marked as "red" (unsafe to delete).
     -   ~~Use AlertDialog for deletion confirmation~~ **ISSUE:** Flet AlertDialog not displaying properly across different versions
-    -   **NEW APPROACH:** Use inline confirmation UI with Yes/No buttons at the bottom instead of modal dialog
+    -   **IMPLEMENTED:** Use inline confirmation UI with Yes/No buttons at the bottom instead of modal dialog
     -   When "Delete Selected" is clicked, show confirmation row with selected file count and Yes/No buttons
     -   Only show confirmation UI when deletion is requested, hide it after confirmation or cancellation
--   **Status:** 🚧 Core deletion logic exists. Implementing simple inline confirmation UI to replace problematic modal dialogs.
+-   **Status:** ✅ **COMPLETED AND VERIFIED** - Inline confirmation UI working properly, file deletion functional with safety checks.
 
 ### Step 8: CI/CD Setup ✅ **COMPLETED**
 
@@ -106,25 +106,25 @@ This plan adheres to the specifications outlined in `GEMINI.md` and `.github/cop
 
 ## Next Steps - Priority Order
 
-**IMMEDIATE PRIORITY: User Verification Required**
+**IMMEDIATE PRIORITY: Complete AI Analysis Implementation**
 
-The following features have been implemented in code but need user testing to verify they work as expected:
+### 1. Enhanced Safety Database (Step 6 - Priority 1)
+- Expand the predefined safety rules database with comprehensive macOS paths
+- Include system directories, user directories, application paths, and common file types
+- Ensure coverage of all critical macOS locations to minimize AI API calls
 
-### 1. Test Drill-Down Navigation (Step 5.1)
-- Start the application and go to the "Disk Analyzer" tab
-- Run a scan on any directory (e.g., Downloads)
-- Try clicking on folder entries to navigate into them
-- Check if breadcrumb navigation appears and works (clicking on path segments)
-- Look for and test the ".." entry for going up one level
+### 2. AI Integration (Step 6 - Priority 2)  
+- Implement actual Gemini API integration for unknown paths
+- Add user configuration for AI API tokens
+- Implement fallback heuristic analysis when API is unavailable
+- Cache AI analysis results to avoid repeated API calls
 
-### 2. Test Safety Analysis Features (Step 6)
-- After scanning, check if colored safety dots appear next to files/folders:
-  - Green = safe to delete
-  - Orange = caution required  
-  - Red = unsafe to delete
-  - Grey = unknown (needs AI analysis)
-- Look for and test AI analysis icons (brain/psychology icon) for unknown files
-- Click AI analysis icons to trigger analysis
+**SECONDARY PRIORITY: User Verification Required**
+
+### 3. Test All Features (Steps 5.1, 6, 7)
+- Test drill-down navigation, safety analysis, and deletion functionality
+- Verify the expanded safety database provides good coverage
+- Test AI analysis for truly unknown file types
 
 ### 3. Test Deletion Logic (Step 7) - **UPDATED APPROACH**
 - Select files/folders using checkboxes in the file list

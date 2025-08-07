@@ -74,6 +74,12 @@ Generate a README.md with clear, step-by-step instructions for:
 - **Linter**: Flake8 to catch common errors and enforce style.
 - **Configuration**: Settings for both Black and Flake8 stored in the `pyproject.toml` file for consistency.
 
+### Important Flet Framework Notes
+- **Case Sensitivity**: Always use uppercase for Flet constants:
+  - ✅ Correct: `ft.Icons.FOLDER`, `ft.Colors.RED`, `ft.MainAxisAlignment.CENTER`
+  - ❌ Incorrect: `ft.icons.FOLDER`, `ft.colors.RED`, `ft.mainaxisalignment.CENTER`
+- **Reason**: Newer versions of Flet use uppercase naming conventions. Using lowercase will cause `AttributeError`.
+
 ## 7. CI/CD with GitHub Actions
 
 ### Directory

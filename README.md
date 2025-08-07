@@ -18,6 +18,16 @@ A powerful macOS utility application that provides two essential disk management
 ### Disk Analyzer
 - ✅ Multi-threaded directory scanning with progress indication
 - ✅ Interactive file explorer with drill-down navigation
+- ✅ Breadcrumb navigation for easy directory traversal
+- ✅ Safety-coded file analysis with colored indicators:
+  - 🟢 Green: Safe to delete
+  - 🟠 Orange: Caution advised
+  - 🔴 Red: Do not delete (system files)
+  - ⚪ Grey: Unknown (AI analysis available)
+- ✅ AI-powered analysis for unknown file types (placeholder implementation)
+- ✅ Checkbox-based file selection with smart safety controls
+- ✅ Inline confirmation UI for safe file deletion
+- ✅ Real-time deletion feedback and directory refresh
 - ✅ Breadcrumb navigation for easy path traversal
 - ✅ **Smart Safety Analysis** with color-coded indicators:
   - 🟢 **Green**: Safe to delete

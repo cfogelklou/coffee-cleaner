@@ -11,3 +11,15 @@ __pycache__/
 
 # Optional pip environment files
 Pipfile.lock
+
+# Configuration files with API keys (NEVER commit these)
+config.json
+user_config.json
+ai_analysis_cache.json
+.env
+*.key
+
+# Application cache and temporary files
+cache/
+*.cache
+ai_analysis_cache.json

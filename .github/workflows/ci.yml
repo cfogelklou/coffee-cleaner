@@ -75,7 +75,7 @@ jobs:
         ./build.sh
     
     - name: Upload build artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: mac-cleaner-app
         path: build/Mac\ Cleaner\ &\ Analyzer/Mac\ Cleaner\ &\ Analyzer.app
