@@ -78,6 +78,7 @@ def main(page: ft.Page):
     summary_text = ft.Text("", size=12, color=ft.Colors.GREY_700)
     progress_bar = ft.ProgressBar(width=400, value=0, visible=False)
     current_result = {"items": [], "category_map": {}, "selected": set(), "total_size": 0}
+    category_folded = {}
 
     def selected_categories():
         cats = []
@@ -116,6 +117,14 @@ def main(page: ft.Page):
             # Header with subtotal and toggle
             subtotal = sum(i.size for i in sorted_items if i.path in current_result["selected"])
             total_cat_size = sum(i.size for i in sorted_items)
+            is_folded = category_folded.get(cat, False)
+            chevron_icon = ft.Icons.KEYBOARD_ARROW_RIGHT if is_folded else ft.Icons.KEYBOARD_ARROW_DOWN
+            def make_fold_toggle(category):
+                def handler(e):
+                    category_folded[category] = not category_folded.get(category, False)
+                    rebuild_list_ui()
+                    page.update()
+                return handler
             cat_checkbox = ft.Checkbox(
                 value=all(i.path in current_result["selected"] for i in sorted_items) and len(sorted_items) > 0,
                 label=f"{cat.replace('_',' ').title()} ({qc_format_size(subtotal)}/{qc_format_size(total_cat_size)})",
@@ -133,86 +142,75 @@ def main(page: ft.Page):
                     page.update()
                 return handler
             cat_checkbox.on_change = make_cat_toggle(cat, sorted_items, cat_checkbox)
-            quick_clean_file_list.controls.append(cat_checkbox)
-            
-            # Items
-            for it in sorted_items:
-                item_cb = ft.Checkbox(value=it.path in current_result["selected"], label=None)
-                def make_item_toggle(path):
-                    def handler(e):
-                        if e.control.value:
-                            current_result["selected"].add(path)
-                        else:
-                            current_result["selected"].discard(path)
-                        update_summary()
-                        rebuild_list_ui()
-                        page.update()
-                    return handler
-                item_cb.on_change = make_item_toggle(it.path)
-                rel = os.path.relpath(it.path, os.path.expanduser("~"))
-                
-                # Create AI analysis handler for Quick Clean items
-                def create_quick_clean_ai_handler(path):
-                    def handler(e):
-                        # Show loading state
-                        e.control.icon = ft.Icons.HOURGLASS_EMPTY
-                        e.control.tooltip = "Analyzing..."
-                        page.update()
-
-                        # Perform AI analysis in a separate thread
-                        def analyze():
-                            result = ai_analyze_path(path)
-
-                            # Update the UI on the main thread
-                            def update_ui():
-                                # Find and update the AI icon in Quick Clean list
-                                for control in quick_clean_file_list.controls:
-                                    if isinstance(control, ft.Row) and len(control.controls) >= 4:
-                                        # Check if this row contains our path
-                                        if len(control.controls) > 2 and hasattr(control.controls[2], 'tooltip'):
-                                            if control.controls[2].tooltip == path:
-                                                # Update AI icon (last control in the row)
-                                                ai_icon = control.controls[3]
-                                                ai_icon.icon = ft.Icons.PSYCHOLOGY
-                                                ai_icon.tooltip = result["reason"]
-                                                ai_icon.icon_color = get_safety_color(result["safety"])
-                                                page.update()
-                                                break
-
-                            update_ui()
-
-                        threading.Thread(target=analyze, daemon=True).start()
-
-                    return handler
-
-                # Check for cached AI analysis
-                normalized_path = it.path
-                cached_ai = config_manager.get_cached_analysis(normalized_path)
-                if cached_ai:
-                    ai_icon_color = get_safety_color(cached_ai.get("safety", "grey"))
-                    ai_icon_tooltip = cached_ai.get("reason", "AI analysis available")
-                    ai_icon_icon = ft.Icons.PSYCHOLOGY
-                else:
-                    ai_icon_color = None
-                    ai_icon_tooltip = "Click for AI analysis"
-                    ai_icon_icon = ft.Icons.PSYCHOLOGY_OUTLINED
-
-                ai_icon = ft.IconButton(
-                    icon=ai_icon_icon,
-                    tooltip=ai_icon_tooltip,
-                    icon_size=16,
-                    on_click=create_quick_clean_ai_handler(it.path),
-                    icon_color=ai_icon_color,
-                )
-
-                quick_clean_file_list.controls.append(
-                    ft.Row([
-                        ft.Container(width=48, content=item_cb),
-                        ft.Text(qc_format_size(it.size), width=90),
-                        ft.Text(rel, expand=True, tooltip=it.path),
-                        ai_icon,  # Add AI icon to each item
-                    ], spacing=6, alignment=ft.MainAxisAlignment.START)
-                )
+            quick_clean_file_list.controls.append(
+                ft.Row([
+                    ft.IconButton(icon=chevron_icon, on_click=make_fold_toggle(cat), icon_size=18),
+                    cat_checkbox
+                ], spacing=4, alignment=ft.MainAxisAlignment.START)
+            )
+            # Items (only if expanded)
+            if not is_folded:
+                for it in sorted_items:
+                    item_cb = ft.Checkbox(value=it.path in current_result["selected"], label=None)
+                    def make_item_toggle(path):
+                        def handler(e):
+                            if e.control.value:
+                                current_result["selected"].add(path)
+                            else:
+                                current_result["selected"].discard(path)
+                            update_summary()
+                            rebuild_list_ui()
+                            page.update()
+                        return handler
+                    item_cb.on_change = make_item_toggle(it.path)
+                    rel = os.path.relpath(it.path, os.path.expanduser("~"))
+                    # Create AI analysis handler for Quick Clean items
+                    def create_quick_clean_ai_handler(path):
+                        def handler(e):
+                            e.control.icon = ft.Icons.HOURGLASS_EMPTY
+                            e.control.tooltip = "Analyzing..."
+                            page.update()
+                            def analyze():
+                                result = ai_analyze_path(path)
+                                def update_ui():
+                                    for control in quick_clean_file_list.controls:
+                                        if isinstance(control, ft.Row) and len(control.controls) >= 4:
+                                            if len(control.controls) > 2 and hasattr(control.controls[2], 'tooltip'):
+                                                if control.controls[2].tooltip == path:
+                                                    ai_icon = control.controls[3]
+                                                    ai_icon.icon = ft.Icons.PSYCHOLOGY
+                                                    ai_icon.tooltip = result["reason"]
+                                                    ai_icon.icon_color = get_safety_color(result["safety"])
+                                                    page.update()
+                                                    break
+                                update_ui()
+                            threading.Thread(target=analyze, daemon=True).start()
+                        return handler
+                    normalized_path = it.path
+                    cached_ai = config_manager.get_cached_analysis(normalized_path)
+                    if cached_ai:
+                        ai_icon_color = get_safety_color(cached_ai.get("safety", "grey"))
+                        ai_icon_tooltip = cached_ai.get("reason", "AI analysis available")
+                        ai_icon_icon = ft.Icons.PSYCHOLOGY
+                    else:
+                        ai_icon_color = None
+                        ai_icon_tooltip = "Click for AI analysis"
+                        ai_icon_icon = ft.Icons.PSYCHOLOGY_OUTLINED
+                    ai_icon = ft.IconButton(
+                        icon=ai_icon_icon,
+                        tooltip=ai_icon_tooltip,
+                        icon_size=16,
+                        on_click=create_quick_clean_ai_handler(it.path),
+                        icon_color=ai_icon_color,
+                    )
+                    quick_clean_file_list.controls.append(
+                        ft.Row([
+                            ft.Container(width=48, content=item_cb),
+                            ft.Text(qc_format_size(it.size), width=90),
+                            ft.Text(rel, expand=True, tooltip=it.path),
+                            ai_icon,
+                        ], spacing=6, alignment=ft.MainAxisAlignment.START)
+                    )
 
     def update_summary():
         total_selected_size = sum(i.size for i in current_result["items"] if i.path in current_result["selected"])
@@ -325,7 +323,7 @@ def main(page: ft.Page):
             border=ft.border.all(1, "#1F000000"),
             border_radius=5,
             padding=8,
-            height=260,
+            expand=True,
         ),
         ft.Row([summary_text], alignment=ft.MainAxisAlignment.START),
     ], spacing=10, alignment=ft.MainAxisAlignment.START)
