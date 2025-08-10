@@ -111,17 +111,22 @@ def main(page: ft.Page):
     def rebuild_list_ui():
         quick_clean_file_list.controls.clear()
         # Category grouping
+        # Sort categories by total size (largest first)
+        cat_sizes = []
         for cat, items in current_result["category_map"].items():
-            # --- Sort items in this category by size (largest first) ---
+            total_cat_size = sum(i.size for i in items)
+            cat_sizes.append((cat, total_cat_size))
+        cat_sizes.sort(key=lambda x: x[1], reverse=True)
+        for cat, _ in cat_sizes:
+            items = current_result["category_map"][cat]
             sorted_items = sorted(items, key=lambda i: i.size, reverse=True)
-            # Header with subtotal and toggle
             subtotal = sum(i.size for i in sorted_items if i.path in current_result["selected"])
             total_cat_size = sum(i.size for i in sorted_items)
-            is_folded = category_folded.get(cat, False)
+            is_folded = category_folded.get(cat, True)  # Default to folded
             chevron_icon = ft.Icons.KEYBOARD_ARROW_RIGHT if is_folded else ft.Icons.KEYBOARD_ARROW_DOWN
             def make_fold_toggle(category):
                 def handler(e):
-                    category_folded[category] = not category_folded.get(category, False)
+                    category_folded[category] = not category_folded.get(category, True)
                     rebuild_list_ui()
                     page.update()
                 return handler
@@ -148,7 +153,6 @@ def main(page: ft.Page):
                     cat_checkbox
                 ], spacing=4, alignment=ft.MainAxisAlignment.START)
             )
-            # Items (only if expanded)
             if not is_folded:
                 for it in sorted_items:
                     item_cb = ft.Checkbox(value=it.path in current_result["selected"], label=None)
@@ -164,7 +168,6 @@ def main(page: ft.Page):
                         return handler
                     item_cb.on_change = make_item_toggle(it.path)
                     rel = os.path.relpath(it.path, os.path.expanduser("~"))
-                    # Create AI analysis handler for Quick Clean items
                     def create_quick_clean_ai_handler(path):
                         def handler(e):
                             e.control.icon = ft.Icons.HOURGLASS_EMPTY
@@ -240,11 +243,14 @@ def main(page: ft.Page):
         from quick_clean import analyze_quick_clean_iter
 
         def run_analysis():
+            # After analysis, fold all categories by default
+            category_folded.clear()
             for idx, (cat, items, cat_size) in enumerate(analyze_quick_clean_iter(cats)):
                 current_result["category_map"][cat] = items
                 current_result["items"].extend(items)
                 for it in items:
                     current_result["selected"].add(it.path)  # default selected
+                category_folded[cat] = True  # Folded by default
                 # Update UI incrementally
                 try:
                     progress_bar.value = (idx + 1) / total_cats
@@ -266,15 +272,17 @@ def main(page: ft.Page):
         threading.Thread(target=run_analysis, daemon=True).start()
 
     def clean_files(e):
-        # Build list of selected paths
-        paths = [i.path for i in current_result["items"] if i.path in current_result["selected"]]
-        if not paths:
+        # Build list of selected items as dicts with 'path' key (to match perform_deletion signature)
+        selected_items = [
+            {"path": i.path} for i in current_result["items"] if i.path in current_result["selected"]
+        ]
+        if not selected_items:
             return
-        analysis_results_text.value = f"Deleting {len(paths)} selected items..."
+        analysis_results_text.value = f"Deleting {len(selected_items)} selected items..."
         page.update()
 
         def run_delete():
-            deleted, errors = perform_deletion(paths)
+            deleted, errors = perform_deletion(selected_items)
             try:
                 analysis_results_text.value = f"Deleted {deleted} items with {errors} errors"
                 clean_button.disabled = True
@@ -522,6 +530,8 @@ def main(page: ft.Page):
         debug_log(f"Performing deletion of {len(selected_items)} items")
 
         deletion_results = []
+        deleted_count = 0
+        error_count = 0
         for item in selected_items:
             try:
                 path = item['path']
@@ -531,10 +541,12 @@ def main(page: ft.Page):
                     os.remove(path)
                 deletion_results.append(f"✓ Deleted: {os.path.basename(path)}")
                 debug_log(f"Successfully deleted: {path}")
+                deleted_count += 1
             except Exception as ex:
                 error_msg = f"✗ Failed to delete {os.path.basename(item['path'])}: {str(ex)}"
                 deletion_results.append(error_msg)
                 debug_log(f"Failed to delete {item['path']}: {ex}")
+                error_count += 1
 
         # Show results in scan status
         scan_status_text.value = f"Deletion complete. {'\n'.join(deletion_results[:3])}"
@@ -543,6 +555,7 @@ def main(page: ft.Page):
 
         # Refresh the current directory
         scan_and_display(scan_thread_state["current_path"])
+        return deleted_count, error_count
 
     def simple_delete_selected_handler(e):
         """Handle delete button click with inline confirmation."""
