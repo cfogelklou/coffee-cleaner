@@ -2,4 +2,4 @@ flet
 google-generativeai
 black
 flake8
-openai
+openai==0.28

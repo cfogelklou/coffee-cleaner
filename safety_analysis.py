@@ -271,7 +271,7 @@ def _analyze_with_openai(path):
     """
 
     response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo", messages=[{"role": "user", "content": prompt}], max_tokens=200
+        model="gpt-4.1", messages=[{"role": "user", "content": prompt}], max_tokens=200
     )
 
     # Parse the response
