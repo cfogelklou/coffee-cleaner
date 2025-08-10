@@ -147,8 +147,7 @@ def _fallback_heuristic_analysis(path):
         return {
             "safety": "orange",
             "reason": (
-                "Heuristic Analysis: Configuration or preference files. "
-                "Deleting may affect application behavior."
+                "Heuristic Analysis: Configuration or preference files. " "Deleting may affect application behavior."
             ),
         }
 

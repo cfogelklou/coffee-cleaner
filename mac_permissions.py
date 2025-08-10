@@ -13,7 +13,6 @@ Notes:
 This module is lightweight and safe; if run on non-macOS it returns conservative defaults.
 """
 
-
 from __future__ import annotations
 import platform
 import subprocess
