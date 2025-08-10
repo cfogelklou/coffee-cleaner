@@ -417,17 +417,15 @@ def main(page: ft.Page):
                                 if hasattr(control, "data") and control.data == path:
                                     # Update safety dot color
                                     if len(control.leading.controls) > 0:
-                                        control.leading.controls[0].bgcolor = (
-                                            get_safety_color(result["safety"])
-                                        )
+                                        control.leading.controls[0].bgcolor = get_safety_color(result["safety"])
                                     # Update AI icon
                                     if len(control.trailing.controls) > 1:
                                         ai_icon = control.trailing.controls[1]
                                         ai_icon.icon = ft.Icons.PSYCHOLOGY
                                         ai_icon.tooltip = result["reason"]
+                                        ai_icon.icon_color = get_safety_color(result["safety"])
                                     page.update()
 
-                        # Call update_ui directly - Flet handles thread safety
                         update_ui()
 
                     threading.Thread(target=analyze, daemon=True).start()
@@ -460,7 +458,7 @@ def main(page: ft.Page):
                 tooltip=ai_icon_tooltip,
                 icon_size=16,
                 on_click=create_ai_analyze_handler(item["path"]),
-                bgcolor=ai_icon_color,
+                icon_color=ai_icon_color,
             )
 
             # Create checkbox for selection
