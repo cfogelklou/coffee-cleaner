@@ -5,7 +5,7 @@ Allows users to configure API keys and application preferences.
 
 import flet as ft
 from config_manager import config_manager
-from mac_permissions import has_full_disk_access, open_full_disk_access_pane
+from mac_permissions import open_full_disk_access_pane
 
 
 def create_settings_tab(page: ft.Page) -> ft.Column:
@@ -56,48 +56,12 @@ def create_settings_tab(page: ft.Page) -> ft.Column:
         color=ft.Colors.GREEN if config_manager.get_openai_api_key() else ft.Colors.ORANGE
     )
     
-    # Full Disk Access section elements
-    fda_status_raw = has_full_disk_access()
-    fda_status_text = ft.Text(
-        value=("Full Disk Access: Granted" if fda_status_raw.has_fda else "Full Disk Access: Not Granted"),
-        color=(ft.Colors.GREEN if fda_status_raw.has_fda else ft.Colors.RED)
-    )
-    fda_details_expanded = ft.Text(
-        value="\n".join([f"{p}: {res}" for p, res in fda_status_raw.checked_paths]),
-        size=10,
-        selectable=True,
-        visible=False,
-        color=ft.Colors.GREY_600,
-    )
-
-    def toggle_fda_details(e):
-        fda_details_expanded.visible = not fda_details_expanded.visible
-        page.update()
-
-    toggle_fda_details_button = ft.TextButton(
-        text="Show Details" if not fda_details_expanded.visible else "Hide Details",
-        on_click=lambda e: (setattr(toggle_fda_details_button, 'text', "Hide Details" if toggle_fda_details_button.text == "Show Details" else "Show Details"), toggle_fda_details(e))
-    )
-
+    # Full Disk Access section elements (now always 'Not Granted')
     open_fda_button = ft.ElevatedButton(
         text="Open Full Disk Access Settings",
         on_click=lambda e: open_full_disk_access_pane(),
-        disabled=fda_status_raw.has_fda,
+        disabled=False,
     )
-
-    refresh_fda_button = ft.IconButton(
-        icon=ft.Icons.REFRESH,
-        tooltip="Re-check Full Disk Access",
-        on_click=lambda e: refresh_fda_status(),
-    )
-
-    def refresh_fda_status():
-        status = has_full_disk_access()
-        fda_status_text.value = "Full Disk Access: Granted" if status.has_fda else "Full Disk Access: Not Granted"
-        fda_status_text.color = ft.Colors.GREEN if status.has_fda else ft.Colors.RED
-        fda_details_expanded.value = "\n".join([f"{p}: {res}" for p, res in status.checked_paths])
-        open_fda_button.disabled = status.has_fda
-        page.update()
 
     cache_info = ft.Text(
         value=f"Cached AI analyses: {config_manager.get_cache_size()}",
@@ -115,7 +79,6 @@ def create_settings_tab(page: ft.Page) -> ft.Column:
         openai_status.color = ft.Colors.GREEN if config_manager.get_openai_api_key() else ft.Colors.ORANGE
         
         cache_info.value = f"Cached AI analyses: {config_manager.get_cache_size()}"
-        refresh_fda_status()
         page.update()
     
     def save_settings(e):
@@ -186,11 +149,25 @@ def create_settings_tab(page: ft.Page) -> ft.Column:
         text="Clear Cache",
         on_click=clear_cache
     )
-
     settings_tab = ft.Column([
         ft.Text("Settings", size=24, weight=ft.FontWeight.BOLD),
         ft.Divider(),
 
+        # --- Permissions Section ---
+        ft.Container(height=20),
+        ft.Text("Permissions", size=16, weight=ft.FontWeight.W_500),
+        ft.Row([
+            open_fda_button,
+        ], spacing=10),
+        ft.Container(height=10),
+
+        # --- Cache Management Section ---
+        ft.Container(height=30),
+        ft.Text("Cache Management", size=16, weight=ft.FontWeight.W_500),
+        cache_info,
+        clear_cache_button,
+
+        
         # --- AI Analysis Configuration ---
         ft.Text("AI Analysis Configuration", size=18, weight=ft.FontWeight.W_500),
         enable_ai_checkbox,
@@ -214,30 +191,12 @@ def create_settings_tab(page: ft.Page) -> ft.Column:
                 ft.Row([ft.Text("Status: "), openai_status], spacing=5),
             ], spacing=5),
         ]),
+       
         ft.Container(height=20),
         ft.Row([
             save_button,
             test_button,
-        ], spacing=10),
-
-        # --- Permissions Section ---
-        ft.Container(height=30),
-        ft.Text("Permissions", size=16, weight=ft.FontWeight.W_500),
-        ft.Row([
-            fda_status_text,
-            refresh_fda_button,
-        ], spacing=5, alignment=ft.MainAxisAlignment.START),
-        ft.Row([
-            open_fda_button,
-            toggle_fda_details_button,
-        ], spacing=10),
-        fda_details_expanded,
-
-        # --- Cache Management Section ---
-        ft.Container(height=30),
-        ft.Text("Cache Management", size=16, weight=ft.FontWeight.W_500),
-        cache_info,
-        clear_cache_button,
+        ], spacing=10),        
 
         ft.Container(height=10),
         status_text,
