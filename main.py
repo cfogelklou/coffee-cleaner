@@ -74,7 +74,7 @@ def main(page: ft.Page):
     analyze_button = ft.ElevatedButton(text="Analyze")
     clean_button = ft.ElevatedButton(text="Clean", disabled=True)
     analysis_results_text = ft.Text("Select categories and click Analyze")
-    quick_clean_file_list = ft.ListView(height=260, spacing=2, auto_scroll=True)
+    quick_clean_file_list = ft.ListView(height=260, spacing=2, auto_scroll=False)
     summary_text = ft.Text("", size=12, color=ft.Colors.GREY_700)
     progress_bar = ft.ProgressBar(width=400, value=0, visible=False)
     current_result = {"items": [], "category_map": {}, "selected": set(), "total_size": 0}
