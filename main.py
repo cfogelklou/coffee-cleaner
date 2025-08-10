@@ -118,7 +118,7 @@ def main(page: ft.Page):
                 rel = os.path.relpath(it.path, os.path.expanduser("~"))
                 quick_clean_file_list.controls.append(
                     ft.Row([
-                        ft.Container(width=18, content=item_cb),
+                        ft.Container(width=48, content=item_cb),  # Increased indentation here
                         ft.Text(qc_format_size(it.size), width=90),
                         ft.Text(rel, expand=True, tooltip=it.path),
                     ], spacing=6, alignment=ft.MainAxisAlignment.START)
