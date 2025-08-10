@@ -5,7 +5,6 @@ A multi-functional macOS utility for cleaning junk files and analyzing disk usag
 
 import flet as ft
 import time
-import random
 import os
 import math
 import threading
@@ -18,6 +17,15 @@ from safety_analysis import get_safety_info, get_safety_color, ai_analyze_path
 from deletion import create_deletion_manager
 from config_manager import config_manager
 from settings_ui import create_settings_tab
+from quick_clean import (
+    USER_CACHE,
+    SYSTEM_LOGS,
+    TRASH,
+    IOS_BACKUPS,
+    analyze_quick_clean,
+    perform_quick_clean,
+    format_size as qc_format_size,
+)
 
 
 def main(page: ft.Page):
@@ -49,81 +57,103 @@ def main(page: ft.Page):
 
     analyze_button = ft.ElevatedButton(text="Analyze")
     clean_button = ft.ElevatedButton(text="Clean", disabled=True)
-    analysis_results_text = ft.Text("Analysis results will be shown here.")
-    quick_clean_file_list = ft.ListView(height=200, spacing=5, auto_scroll=True)
+    analysis_results_text = ft.Text("Select categories and click Analyze")
+    quick_clean_file_list = ft.ListView(height=250, spacing=4, auto_scroll=True)
+    summary_text = ft.Text("", size=12, color=ft.Colors.GREY_700)
+    current_result = {"data": None}
+
+    def selected_categories():
+        cats = []
+        if user_cache_checkbox.value:
+            cats.append(USER_CACHE)
+        if system_logs_checkbox.value:
+            cats.append(SYSTEM_LOGS)
+        if trash_checkbox.value:
+            cats.append(TRASH)
+        if ios_backups_checkbox.value:
+            cats.append(IOS_BACKUPS)
+        return cats
 
     def analyze_files(e):
         analysis_results_text.value = "Analyzing..."
+        summary_text.value = ""
         quick_clean_file_list.controls.clear()
-        page.update()
-        time.sleep(1)  # Simulate analysis time
-
-        total_size = 0
-        files_to_delete = []
-
-        if user_cache_checkbox.value:
-            size = random.randint(100, 1000)
-            total_size += size
-            files_to_delete.append(f"~/Library/Caches/some_app/cache.db ({size} MB)")
-        if system_logs_checkbox.value:
-            size = random.randint(50, 500)
-            total_size += size
-            files_to_delete.append(f"/private/var/log/system.log ({size} MB)")
-        if trash_checkbox.value:
-            size = random.randint(0, 2000)
-            total_size += size
-            if size > 0:
-                files_to_delete.append(f"~/.Trash/some_file ({size} MB)")
-        if ios_backups_checkbox.value:
-            size = random.randint(0, 10000)
-            total_size += size
-            if size > 0:
-                files_to_delete.append(
-                    f"~/Library/Application Support/MobileSync/Backup/some_backup ({size} MB)"
-                )
-
-        analysis_results_text.value = f"Found {total_size} MB of junk files."
-        for file_path in files_to_delete:
-            quick_clean_file_list.controls.append(ft.Text(file_path))
-
-        clean_button.disabled = False
-        page.update()
-
-    def clean_files(e):
-        analysis_results_text.value = "Cleaning..."
-        quick_clean_file_list.controls.clear()
-        page.update()
-        time.sleep(1)
-
-        analysis_results_text.value = "Cleaning complete!"
         clean_button.disabled = True
         page.update()
+
+        def run_analysis():
+            cats = selected_categories()
+            result = analyze_quick_clean(cats)
+            current_result["data"] = result
+
+            # Directly update UI (Flet allows updating from worker thread in most cases); wrap in try for safety.
+            try:
+                quick_clean_file_list.controls.clear()
+                for item in result.items[:500]:  # safety cap
+                    rel = os.path.relpath(item.path, os.path.expanduser("~"))
+                    quick_clean_file_list.controls.append(
+                        ft.Row([
+                            ft.Text(qc_format_size(item.size), width=90),
+                            ft.Text(rel, expand=True, tooltip=item.path),
+                        ], alignment=ft.MainAxisAlignment.START, spacing=10)
+                    )
+                analysis_results_text.value = f"Found {qc_format_size(result.total_size)} of removable data"
+                summary_text.value = f"Items: {len(result.items)}"
+                clean_button.disabled = result.total_size == 0
+                page.update()
+            except Exception as ex:
+                analysis_results_text.value = f"Error updating UI: {ex}"
+                page.update()
+
+        threading.Thread(target=run_analysis, daemon=True).start()
+
+    def clean_files(e):
+        data = current_result.get("data")
+        if not data:
+            return
+        analysis_results_text.value = "Deleting..."
+        page.update()
+
+        def run_delete():
+            cats = selected_categories()
+            deleted, errors = perform_quick_clean(data, cats)
+            try:
+                analysis_results_text.value = f"Deleted {deleted} items with {errors} errors"
+                clean_button.disabled = True
+                quick_clean_file_list.controls.clear()
+                page.update()
+            except Exception as ex:
+                analysis_results_text.value = f"Deletion UI error: {ex}"
+                page.update()
+        threading.Thread(target=run_delete, daemon=True).start()
 
     analyze_button.on_click = analyze_files
     clean_button.on_click = clean_files
 
-    quick_clean_tab = ft.Column(
-        controls=[
+    quick_clean_tab = ft.Column([
+        ft.Text("Quick Clean", size=20, weight=ft.FontWeight.BOLD),
+        ft.Row([
             user_cache_checkbox,
             system_logs_checkbox,
+        ], spacing=10),
+        ft.Row([
             trash_checkbox,
             ios_backups_checkbox,
-            ft.Row(
-                controls=[analyze_button, clean_button],
-                alignment=ft.MainAxisAlignment.CENTER,
-            ),
-            analysis_results_text,
-            ft.Container(
-                content=quick_clean_file_list,
-                border=ft.border.all(1, "#1F000000"),
-                border_radius=5,
-                padding=10,
-                height=250,
-            ),
-        ],
-        spacing=10,
-        alignment=ft.MainAxisAlignment.START,
-    )
+        ], spacing=10),
+        ft.Row([
+            analyze_button,
+            clean_button,
+        ], spacing=10),
+        analysis_results_text,
+        ft.Container(
+            content=quick_clean_file_list,
+            border=ft.border.all(1, "#1F000000"),
+            border_radius=5,
+            padding=8,
+            height=260,
+        ),
+        summary_text,
+    ], spacing=10, alignment=ft.MainAxisAlignment.START)
 
     # --- Disk Analyzer Tab --- #
     scan_status_text = ft.Text("")

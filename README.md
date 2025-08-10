@@ -12,7 +12,7 @@ A powerful macOS utility application that provides two essential disk management
   - User Cache files
   - System Logs
   - Trash contents
-  - iOS Backups
+  - iOS and local system (macOS) backups
 - ✅ Real-time size calculation and preview of files to be deleted
 
 ### Disk Analyzer
