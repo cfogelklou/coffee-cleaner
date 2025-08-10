@@ -112,6 +112,20 @@ To create a standalone application bundle:
 3. **Find the built application:**
    The application will be created in `build/Mac Cleaner & Analyzer/Mac Cleaner & Analyzer.app`
 
+### Granting Full Disk Access (macOS)
+
+To allow the app to clean and analyze all files on your Mac, you may need to grant it Full Disk Access:
+
+1. **Build and sign the app** (see build instructions above).
+2. Open **System Settings** > **Privacy & Security** > **Full Disk Access**.
+3. Click the **+** button and select the `.app` bundle from the `dist` directory (e.g., `dist/Mac Cleaner & Analyzer.app`).
+   - Do **not** select the binary inside the app bundle.
+4. Ensure the checkbox next to the app is enabled.
+5. Restart the app if it was running.
+
+If the app does not appear in the list, make sure it is signed (the build script does this automatically for development). For production/distribution, use a valid Developer ID certificate.
+
+
 ## Development
 
 ### Code Style

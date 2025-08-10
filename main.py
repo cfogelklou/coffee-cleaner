@@ -9,6 +9,8 @@ import os
 import math
 import threading
 import shutil
+import logging
+from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor
 
 # Import our custom modules
@@ -41,6 +43,28 @@ def main(page: ft.Page):
     page.window_width = 600
     page.window_height = 700
     page.window_resizable = True
+
+    # Set up logging
+    log_filename = os.path.join(os.path.expanduser("~"), "Desktop", "mac_cleaner.log")
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(levelname)s - %(message)s',
+        handlers=[
+            logging.FileHandler(log_filename),
+            logging.StreamHandler()  # Also log to console
+        ]
+    )
+    logger = logging.getLogger(__name__)
+    logger.info("Mac Cleaner & Analyzer started")
+
+    # Status text for file events
+    status_text = ft.Text("Ready", size=10, color=ft.Colors.GREY_600)
+    
+    def update_status(message):
+        """Update the status text and log the message"""
+        status_text.value = message
+        logger.info(message)
+        page.update()
 
     page.appbar = ft.AppBar(
         title=ft.Text("Mac Cleaner & Analyzer"),
@@ -274,23 +298,27 @@ def main(page: ft.Page):
     def clean_files(e):
         # Build list of selected items as dicts with 'path' key (to match perform_deletion signature)
         selected_items = [
-            {"path": i.path} for i in current_result["items"] if i.path in current_result["selected"]
+            i.path for i in current_result["items"] if i.path in current_result["selected"]
         ]
         if not selected_items:
             return
         analysis_results_text.value = f"Deleting {len(selected_items)} selected items..."
+        update_status(f"Starting quick clean deletion of {len(selected_items)} items")
         page.update()
 
         def run_delete():
-            deleted, errors = perform_deletion(selected_items)
+            from deletion import perform_deletion as deletion_perform_deletion
+            deleted, errors = deletion_perform_deletion(selected_items)
             try:
                 analysis_results_text.value = f"Deleted {deleted} items with {errors} errors"
+                update_status(f"Quick clean complete: {deleted} deleted, {errors} errors")
                 clean_button.disabled = True
                 quick_clean_file_list.controls.clear()
                 summary_text.value = ""
                 page.update()
             except Exception as ex:
                 analysis_results_text.value = f"Deletion UI error: {ex}"
+                update_status(f"Quick clean error: {ex}")
                 page.update()
         threading.Thread(target=run_delete, daemon=True).start()
 
@@ -349,6 +377,8 @@ def main(page: ft.Page):
         if scan_thread_state["cancelled"]:
             return None
 
+        update_status(f"Scanning: {os.path.basename(path)}")
+        
         total_size = 0
         try:
             if path_info["is_dir"]:
@@ -364,7 +394,8 @@ def main(page: ft.Page):
                                 pass
             else:
                 total_size = os.path.getsize(path)
-        except OSError:
+        except OSError as e:
+            update_status(f"Error scanning: {os.path.basename(path)} - {str(e)}")
             return {
                 "path": path,
                 "size": 0,
@@ -373,6 +404,8 @@ def main(page: ft.Page):
         return {"path": path, "size": total_size, "is_dir": path_info["is_dir"]}
 
     def scan_directory_thread(selected_path):
+        debug_log(f"[DiskAnalyzer] Starting scan of directory: {selected_path}")
+        update_status(f"Starting scan of: {selected_path}")
         scan_thread_state["cancelled"] = False
         scan_thread_state["current_path"] = selected_path
 
@@ -381,8 +414,11 @@ def main(page: ft.Page):
                 {"path": entry.path, "is_dir": entry.is_dir(follow_symlinks=False)}
                 for entry in os.scandir(selected_path)
             ]
+            update_status(f"Found {len(entries)} items in {os.path.basename(selected_path)}")
         except OSError as e:
             scan_status_text.value = f"Error: {e.strerror}"
+            debug_log(f"[DiskAnalyzer] Error scanning directory {selected_path}: {e.strerror}")
+            update_status(f"Error accessing: {selected_path} - {e.strerror}")
             # --- FIX: Update breadcrumbs and add ".." entry even on error ---
             update_breadcrumbs(selected_path)
             scan_results_list.controls.clear()
@@ -411,12 +447,16 @@ def main(page: ft.Page):
                 if result:
                     results.append(result)
 
+                if i % 10 == 0 or i == len(futures) - 1:
+                    print(f"[DiskAnalyzer] Processed {i+1}/{len(futures)} entries in {selected_path}")
+
                 progress = (i + 1) / len(entries)
                 scan_progress_bar.value = progress
                 page.update()
 
         if not scan_thread_state["cancelled"]:
             results.sort(key=lambda x: x["size"], reverse=True)
+            update_status(f"Scan complete: {len(results)} items found in {os.path.basename(selected_path)}")
             display_scan_results(results, selected_path)
 
         reset_scan_ui()
@@ -452,6 +492,8 @@ def main(page: ft.Page):
 
     # Forward declaration of scan_and_display function
     def scan_and_display(path):
+        debug_log(f"[DiskAnalyzer] Entering directory for scan: {path}")
+        update_status(f"Entering directory: {path}")
         scan_button.disabled = True
         cancel_button.disabled = False
         directory_dropdown.disabled = True
@@ -528,6 +570,7 @@ def main(page: ft.Page):
     def perform_deletion(selected_items):
         """Actually delete the selected files and show results."""
         debug_log(f"Performing deletion of {len(selected_items)} items")
+        update_status(f"Starting deletion of {len(selected_items)} items")
 
         deletion_results = []
         deleted_count = 0
@@ -535,17 +578,20 @@ def main(page: ft.Page):
         for item in selected_items:
             try:
                 path = item['path']
+                filename = os.path.basename(path)
                 if os.path.isdir(path):
                     shutil.rmtree(path)
                 else:
                     os.remove(path)
-                deletion_results.append(f"✓ Deleted: {os.path.basename(path)}")
+                deletion_results.append(f"✓ Deleted: {filename}")
                 debug_log(f"Successfully deleted: {path}")
+                update_status(f"Deleted: {filename}")
                 deleted_count += 1
             except Exception as ex:
                 error_msg = f"✗ Failed to delete {os.path.basename(item['path'])}: {str(ex)}"
                 deletion_results.append(error_msg)
                 debug_log(f"Failed to delete {item['path']}: {ex}")
+                update_status(f"Error deleting: {os.path.basename(item['path'])} - {str(ex)}")
                 error_count += 1
 
         # Show results in scan status
@@ -553,6 +599,8 @@ def main(page: ft.Page):
         if len(deletion_results) > 3:
             scan_status_text.value += f"\n... and {len(deletion_results) - 3} more results"
 
+        update_status(f"Deletion complete: {deleted_count} deleted, {error_count} errors")
+        
         # Refresh the current directory
         scan_and_display(scan_thread_state["current_path"])
         return deleted_count, error_count
@@ -767,6 +815,7 @@ def main(page: ft.Page):
         value=os.path.expanduser("~"),
         options=[
             ft.dropdown.Option("/"),
+            ft.dropdown.Option("/Volumes/Macintosh HD"),
             ft.dropdown.Option(os.path.expanduser("~")),
             ft.dropdown.Option(os.path.expanduser("~/Library")),
             ft.dropdown.Option(os.path.expanduser("~/Downloads")),
@@ -840,7 +889,18 @@ def main(page: ft.Page):
         expand=True,
     )
 
-    page.add(tabs)
+    # Add the main content and status text at the bottom
+    page.add(
+        ft.Column([
+            tabs,
+            ft.Container(
+                content=status_text,
+                padding=ft.padding.all(5),
+                bgcolor=ft.Colors.GREY_100,
+                border_radius=3,
+            )
+        ], expand=True)
+    )
 
 
 if __name__ == "__main__":

@@ -20,3 +20,7 @@ pyinstaller main.py \
 
 echo "--- Build complete ---"
 echo "The application bundle can be found in the 'dist' directory."
+
+echo "--- Signing the .app bundle (development ad-hoc signature) ---"
+codesign --deep --force --sign - "dist/Mac Cleaner & Analyzer.app"
+echo "--- Codesign complete ---"
