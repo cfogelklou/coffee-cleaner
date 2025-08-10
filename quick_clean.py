@@ -198,6 +198,19 @@ __all__ = [
     "QuickCleanItem",
     "QuickCleanResult",
     "analyze_quick_clean",
+    "analyze_quick_clean_iter",
     "perform_quick_clean",
     "format_size",
 ]
+
+def analyze_quick_clean_iter(selected_categories: List[str]):
+    """Yield (category, items, total_size_for_category) sequentially for streaming UI updates."""
+    for cat in selected_categories:
+        if cat not in GATHERERS:
+            continue
+        try:
+            items = GATHERERS[cat]()
+        except Exception as e:  # noqa: BLE001
+            debug_log(f"Error gathering category {cat}: {e}")
+            items = []
+        yield cat, items, sum(i.size for i in items)

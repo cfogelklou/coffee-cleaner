@@ -58,9 +58,11 @@ def main(page: ft.Page):
     analyze_button = ft.ElevatedButton(text="Analyze")
     clean_button = ft.ElevatedButton(text="Clean", disabled=True)
     analysis_results_text = ft.Text("Select categories and click Analyze")
-    quick_clean_file_list = ft.ListView(height=250, spacing=4, auto_scroll=True)
+    quick_clean_file_list = ft.ListView(height=260, spacing=2, auto_scroll=True)
     summary_text = ft.Text("", size=12, color=ft.Colors.GREY_700)
-    current_result = {"data": None}
+    progress_bar = ft.ProgressBar(width=400, value=0, visible=False)
+    select_all_checkbox = ft.Checkbox(label="Select All", value=True)
+    current_result = {"items": [], "category_map": {}, "selected": set(), "total_size": 0}
 
     def selected_categories():
         cats = []
@@ -74,53 +76,122 @@ def main(page: ft.Page):
             cats.append(IOS_BACKUPS)
         return cats
 
+    def rebuild_list_ui():
+        quick_clean_file_list.controls.clear()
+        # Category grouping
+        for cat, items in current_result["category_map"].items():
+            # Header with subtotal and toggle
+            subtotal = sum(i.size for i in items if i.path in current_result["selected"])
+            total_cat_size = sum(i.size for i in items)
+            cat_checkbox = ft.Checkbox(
+                value=all(i.path in current_result["selected"] for i in items) and len(items) > 0,
+                label=f"{cat.replace('_',' ').title()} ({qc_format_size(subtotal)}/{qc_format_size(total_cat_size)})",
+            )
+            def make_cat_toggle(category, category_items, cb):
+                def handler(e):
+                    if cb.value:
+                        for it in category_items:
+                            current_result["selected"].add(it.path)
+                    else:
+                        for it in category_items:
+                            current_result["selected"].discard(it.path)
+                    update_summary()
+                    rebuild_list_ui()
+                    page.update()
+                return handler
+            cat_checkbox.on_change = make_cat_toggle(cat, items, cat_checkbox)
+            quick_clean_file_list.controls.append(cat_checkbox)
+            # Items
+            for it in items:
+                item_cb = ft.Checkbox(value=it.path in current_result["selected"], label=None)
+                def make_item_toggle(path):
+                    def handler(e):
+                        if e.control.value:
+                            current_result["selected"].add(path)
+                        else:
+                            current_result["selected"].discard(path)
+                        update_summary()
+                        rebuild_list_ui()
+                        page.update()
+                    return handler
+                item_cb.on_change = make_item_toggle(it.path)
+                rel = os.path.relpath(it.path, os.path.expanduser("~"))
+                quick_clean_file_list.controls.append(
+                    ft.Row([
+                        ft.Container(width=18, content=item_cb),
+                        ft.Text(qc_format_size(it.size), width=90),
+                        ft.Text(rel, expand=True, tooltip=it.path),
+                    ], spacing=6, alignment=ft.MainAxisAlignment.START)
+                )
+
+    def update_summary():
+        total_selected_size = sum(i.size for i in current_result["items"] if i.path in current_result["selected"])
+        summary_text.value = f"Selected: {len(current_result['selected'])} items • {qc_format_size(total_selected_size)}"
+        clean_button.disabled = total_selected_size == 0
+
     def analyze_files(e):
-        analysis_results_text.value = "Analyzing..."
+        analysis_results_text.value = "Analyzing... (streaming)"
         summary_text.value = ""
         quick_clean_file_list.controls.clear()
         clean_button.disabled = True
+        progress_bar.visible = True
+        progress_bar.value = 0
+        current_result["items"] = []
+        current_result["category_map"] = {}
+        current_result["selected"].clear()
         page.update()
 
+        cats = selected_categories()
+        total_cats = len(cats)
+        if total_cats == 0:
+            analysis_results_text.value = "No categories selected"
+            progress_bar.visible = False
+            page.update()
+            return
+
+        from quick_clean import analyze_quick_clean_iter
+
         def run_analysis():
-            cats = selected_categories()
-            result = analyze_quick_clean(cats)
-            current_result["data"] = result
-
-            # Directly update UI (Flet allows updating from worker thread in most cases); wrap in try for safety.
+            for idx, (cat, items, cat_size) in enumerate(analyze_quick_clean_iter(cats)):
+                current_result["category_map"][cat] = items
+                current_result["items"].extend(items)
+                for it in items:
+                    current_result["selected"].add(it.path)  # default selected
+                # Update UI incrementally
+                try:
+                    progress_bar.value = (idx + 1) / total_cats
+                    rebuild_list_ui()
+                    update_summary()
+                    analysis_results_text.value = f"Loaded {cat.replace('_',' ')} ({qc_format_size(cat_size)})"
+                    page.update()
+                except Exception as ex:
+                    analysis_results_text.value = f"Streaming error: {ex}"
+                    page.update()
+            # Final summary
             try:
-                quick_clean_file_list.controls.clear()
-                for item in result.items[:500]:  # safety cap
-                    rel = os.path.relpath(item.path, os.path.expanduser("~"))
-                    quick_clean_file_list.controls.append(
-                        ft.Row([
-                            ft.Text(qc_format_size(item.size), width=90),
-                            ft.Text(rel, expand=True, tooltip=item.path),
-                        ], alignment=ft.MainAxisAlignment.START, spacing=10)
-                    )
-                analysis_results_text.value = f"Found {qc_format_size(result.total_size)} of removable data"
-                summary_text.value = f"Items: {len(result.items)}"
-                clean_button.disabled = result.total_size == 0
+                total_size = sum(i.size for i in current_result["items"])
+                analysis_results_text.value = f"Found {qc_format_size(total_size)} of removable data"
+                progress_bar.visible = False
                 page.update()
-            except Exception as ex:
-                analysis_results_text.value = f"Error updating UI: {ex}"
-                page.update()
-
+            except Exception:
+                pass
         threading.Thread(target=run_analysis, daemon=True).start()
 
     def clean_files(e):
-        data = current_result.get("data")
-        if not data:
+        # Build list of selected paths
+        paths = [i.path for i in current_result["items"] if i.path in current_result["selected"]]
+        if not paths:
             return
-        analysis_results_text.value = "Deleting..."
+        analysis_results_text.value = f"Deleting {len(paths)} selected items..."
         page.update()
 
         def run_delete():
-            cats = selected_categories()
-            deleted, errors = perform_quick_clean(data, cats)
+            deleted, errors = perform_deletion(paths)
             try:
                 analysis_results_text.value = f"Deleted {deleted} items with {errors} errors"
                 clean_button.disabled = True
                 quick_clean_file_list.controls.clear()
+                summary_text.value = ""
                 page.update()
             except Exception as ex:
                 analysis_results_text.value = f"Deletion UI error: {ex}"
@@ -132,6 +203,10 @@ def main(page: ft.Page):
 
     quick_clean_tab = ft.Column([
         ft.Text("Quick Clean", size=20, weight=ft.FontWeight.BOLD),
+        progress_bar,
+        ft.Row([
+            select_all_checkbox,
+        ], alignment=ft.MainAxisAlignment.START),
         ft.Row([
             user_cache_checkbox,
             system_logs_checkbox,
@@ -152,8 +227,19 @@ def main(page: ft.Page):
             padding=8,
             height=260,
         ),
-        summary_text,
+        ft.Row([summary_text], alignment=ft.MainAxisAlignment.START),
     ], spacing=10, alignment=ft.MainAxisAlignment.START)
+
+    def toggle_select_all(e):
+        if select_all_checkbox.value:
+            for it in current_result["items"]:
+                current_result["selected"].add(it.path)
+        else:
+            current_result["selected"].clear()
+        rebuild_list_ui()
+        update_summary()
+        page.update()
+    select_all_checkbox.on_change = toggle_select_all
 
     # --- Disk Analyzer Tab --- #
     scan_status_text = ft.Text("")
