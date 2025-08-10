@@ -172,6 +172,18 @@ def main(page: ft.Page):
             ]
         except OSError as e:
             scan_status_text.value = f"Error: {e.strerror}"
+            # --- FIX: Update breadcrumbs and add ".." entry even on error ---
+            update_breadcrumbs(selected_path)
+            scan_results_list.controls.clear()
+            if selected_path != "/":
+                parent_dir = os.path.dirname(selected_path)
+                scan_results_list.controls.append(
+                    ft.ListTile(
+                        title=ft.Text(".."),
+                        leading=ft.Icon(ft.Icons.ARROW_UPWARD),
+                        on_click=lambda _, p=parent_dir: scan_and_display(p),
+                    )
+                )
             page.update()
             reset_scan_ui()
             return
@@ -431,18 +443,13 @@ def main(page: ft.Page):
                 tooltip=safety_info["reason"],
             )
 
-            # Create AI analysis icon (only show for grey/unknown items)
-            ai_icon = None
-            if safety_info["safety"] == "grey":
-                ai_icon = ft.IconButton(
-                    icon=ft.Icons.PSYCHOLOGY_OUTLINED,
-                    tooltip="Click for AI analysis",
-                    icon_size=16,
-                    on_click=create_ai_analyze_handler(item["path"]),
-                )
-            else:
-                # Placeholder to maintain alignment
-                ai_icon = ft.Container(width=32, height=32)
+            # Always show AI analysis icon for all items
+            ai_icon = ft.IconButton(
+                icon=ft.Icons.PSYCHOLOGY_OUTLINED,
+                tooltip="Click for AI analysis",
+                icon_size=16,
+                on_click=create_ai_analyze_handler(item["path"]),
+            )
 
             # Create checkbox for selection
             def create_checkbox_handler():
@@ -516,6 +523,7 @@ def main(page: ft.Page):
         directory_dropdown.disabled = False
         if scan_thread_state["cancelled"]:
             scan_status_text.value = "Scan cancelled."
+        scan_thread_state["cancelled"] = False
         scan_progress_bar.value = 0
         page.update()
 
@@ -532,8 +540,13 @@ def main(page: ft.Page):
         options=[
             ft.dropdown.Option("/"),
             ft.dropdown.Option(os.path.expanduser("~")),
+            ft.dropdown.Option(os.path.expanduser("~/Library")),
             ft.dropdown.Option(os.path.expanduser("~/Downloads")),
             ft.dropdown.Option(os.path.expanduser("~/Documents")),
+            ft.dropdown.Option(os.path.expanduser("~/Desktop")),
+            ft.dropdown.Option(os.path.expanduser("~/Pictures")),
+            ft.dropdown.Option(os.path.expanduser("~/Movies")),
+            ft.dropdown.Option(os.path.expanduser("~/Music")),
         ],
         width=350,
     )
