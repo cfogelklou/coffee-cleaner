@@ -19,8 +19,14 @@ except ImportError:
     debug_log("Google Generative AI not available. Install with: pip install google-generativeai")
 
 try:
-    import openai
+    from openai import OpenAI
 
+    # Dynamically fetch the API key from config_manager
+    api_key = config_manager.get_openai_api_key()
+    if not api_key:
+        raise ValueError("OpenAI API key is not configured in the settings.")
+
+    client = OpenAI(api_key=api_key)
     OPENAI_AVAILABLE = True
 except ImportError:
     OPENAI_AVAILABLE = False
@@ -248,7 +254,6 @@ def _analyze_with_openai(path):
         raise Exception("No OpenAI API key configured")
 
     # Configure OpenAI
-    openai.api_key = api_key
 
     # Create analysis prompt
     prompt = f"""
@@ -270,8 +275,8 @@ def _analyze_with_openai(path):
     Consider the file path, common macOS directory structures, and typical user needs.
     """
 
-    response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo", messages=[{"role": "user", "content": prompt}], max_tokens=200
+    response = client.chat.completions.create(
+        model="gpt-4.1", messages=[{"role": "user", "content": prompt}], max_tokens=200
     )
 
     # Parse the response
