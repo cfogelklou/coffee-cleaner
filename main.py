@@ -443,12 +443,24 @@ def main(page: ft.Page):
                 tooltip=safety_info["reason"],
             )
 
-            # Always show AI analysis icon for all items
+            # Check for cached AI analysis
+            normalized_path = item["path"]
+            cached_ai = config_manager.get_cached_analysis(normalized_path)
+            if cached_ai:
+                ai_icon_color = get_safety_color(cached_ai.get("safety", "grey"))
+                ai_icon_tooltip = cached_ai.get("reason", "AI analysis available")
+                ai_icon_icon = ft.Icons.PSYCHOLOGY
+            else:
+                ai_icon_color = None
+                ai_icon_tooltip = "Click for AI analysis"
+                ai_icon_icon = ft.Icons.PSYCHOLOGY_OUTLINED
+
             ai_icon = ft.IconButton(
-                icon=ft.Icons.PSYCHOLOGY_OUTLINED,
-                tooltip="Click for AI analysis",
+                icon=ai_icon_icon,
+                tooltip=ai_icon_tooltip,
                 icon_size=16,
                 on_click=create_ai_analyze_handler(item["path"]),
+                bgcolor=ai_icon_color,
             )
 
             # Create checkbox for selection
