@@ -22,6 +22,14 @@ from quick_clean import (
     SYSTEM_LOGS,
     TRASH,
     IOS_BACKUPS,
+    MACOS_INSTALLERS,
+    XCODE_DERIVED_DATA,
+    IOS_SIMULATORS,
+    CRASH_REPORTS,
+    MAIL_ATTACHMENTS,
+    TEMP_FILES,
+    DISK_IMAGES,
+    APP_SUPPORT_CACHES,
     analyze_quick_clean,
     perform_quick_clean,
     format_size as qc_format_size,
@@ -54,6 +62,14 @@ def main(page: ft.Page):
     system_logs_checkbox = ft.Checkbox(label="System Logs", value=True)
     trash_checkbox = ft.Checkbox(label="Trash", value=True)
     ios_backups_checkbox = ft.Checkbox(label="iOS Backups", value=False)
+    macos_installers_checkbox = ft.Checkbox(label="macOS Installers", value=False)
+    xcode_derived_data_checkbox = ft.Checkbox(label="Xcode Derived Data", value=False)
+    ios_simulators_checkbox = ft.Checkbox(label="iOS Simulators", value=False)
+    crash_reports_checkbox = ft.Checkbox(label="Crash Reports", value=True)
+    mail_attachments_checkbox = ft.Checkbox(label="Mail Attachments", value=False)
+    temp_files_checkbox = ft.Checkbox(label="Temporary Files", value=True)
+    disk_images_checkbox = ft.Checkbox(label="Disk Images (.dmg)", value=False)
+    app_support_caches_checkbox = ft.Checkbox(label="App Support Caches", value=False)
 
     analyze_button = ft.ElevatedButton(text="Analyze")
     clean_button = ft.ElevatedButton(text="Clean", disabled=True)
@@ -73,6 +89,22 @@ def main(page: ft.Page):
             cats.append(TRASH)
         if ios_backups_checkbox.value:
             cats.append(IOS_BACKUPS)
+        if macos_installers_checkbox.value:
+            cats.append(MACOS_INSTALLERS)
+        if xcode_derived_data_checkbox.value:
+            cats.append(XCODE_DERIVED_DATA)
+        if ios_simulators_checkbox.value:
+            cats.append(IOS_SIMULATORS)
+        if crash_reports_checkbox.value:
+            cats.append(CRASH_REPORTS)
+        if mail_attachments_checkbox.value:
+            cats.append(MAIL_ATTACHMENTS)
+        if temp_files_checkbox.value:
+            cats.append(TEMP_FILES)
+        if disk_images_checkbox.value:
+            cats.append(DISK_IMAGES)
+        if app_support_caches_checkbox.value:
+            cats.append(APP_SUPPORT_CACHES)
         return cats
 
     def rebuild_list_ui():
@@ -262,14 +294,27 @@ def main(page: ft.Page):
     quick_clean_tab = ft.Column([
         ft.Text("Quick Clean", size=20, weight=ft.FontWeight.BOLD),
         progress_bar,
+        ft.Text("Select categories to clean:", size=14, weight=ft.FontWeight.W_500),
         ft.Row([
-            user_cache_checkbox,
-            system_logs_checkbox,
-        ], spacing=10),
-        ft.Row([
-            trash_checkbox,
-            ios_backups_checkbox,
-        ], spacing=10),
+            ft.Column([
+                user_cache_checkbox,
+                system_logs_checkbox,
+                trash_checkbox,
+                ios_backups_checkbox,
+            ], spacing=5),
+            ft.Column([
+                macos_installers_checkbox,
+                xcode_derived_data_checkbox,
+                ios_simulators_checkbox,
+                crash_reports_checkbox,
+            ], spacing=5),
+            ft.Column([
+                mail_attachments_checkbox,
+                temp_files_checkbox,
+                disk_images_checkbox,
+                app_support_caches_checkbox,
+            ], spacing=5),
+        ], spacing=20, alignment=ft.MainAxisAlignment.START),
         ft.Row([
             analyze_button,
             clean_button,
