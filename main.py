@@ -424,6 +424,7 @@ def main(page: ft.Page):
                                         ai_icon.icon = ft.Icons.PSYCHOLOGY
                                         ai_icon.tooltip = result["reason"]
                                         ai_icon.icon_color = get_safety_color(result["safety"])
+                                        # ai_icon.bgcolor = get_safety_color(result["safety"])
                                     page.update()
 
                         update_ui()
