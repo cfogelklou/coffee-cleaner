@@ -79,11 +79,13 @@ def main(page: ft.Page):
         quick_clean_file_list.controls.clear()
         # Category grouping
         for cat, items in current_result["category_map"].items():
+            # --- Sort items in this category by size (largest first) ---
+            sorted_items = sorted(items, key=lambda i: i.size, reverse=True)
             # Header with subtotal and toggle
-            subtotal = sum(i.size for i in items if i.path in current_result["selected"])
-            total_cat_size = sum(i.size for i in items)
+            subtotal = sum(i.size for i in sorted_items if i.path in current_result["selected"])
+            total_cat_size = sum(i.size for i in sorted_items)
             cat_checkbox = ft.Checkbox(
-                value=all(i.path in current_result["selected"] for i in items) and len(items) > 0,
+                value=all(i.path in current_result["selected"] for i in sorted_items) and len(sorted_items) > 0,
                 label=f"{cat.replace('_',' ').title()} ({qc_format_size(subtotal)}/{qc_format_size(total_cat_size)})",
             )
             def make_cat_toggle(category, category_items, cb):
@@ -98,10 +100,10 @@ def main(page: ft.Page):
                     rebuild_list_ui()
                     page.update()
                 return handler
-            cat_checkbox.on_change = make_cat_toggle(cat, items, cat_checkbox)
+            cat_checkbox.on_change = make_cat_toggle(cat, sorted_items, cat_checkbox)
             quick_clean_file_list.controls.append(cat_checkbox)
             # Items
-            for it in items:
+            for it in sorted_items:
                 item_cb = ft.Checkbox(value=it.path in current_result["selected"], label=None)
                 def make_item_toggle(path):
                     def handler(e):
