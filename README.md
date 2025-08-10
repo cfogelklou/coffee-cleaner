@@ -196,19 +196,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Support
 
 If you encounter any issues or have questions:
-1. Check the existing [Issues](https://github.com/your-username/mac-cleaner/issues)
+1. Check the existing [Issues](https://github.com/cfogelklou/mac-cleaner/issues)
 2. Create a new issue with detailed information about your problem
 3. Include your macOS version and Python version in bug reports
-
-## Roadmap
-
-- [ ] Integration with actual Gemini API (currently simulated)
-- [ ] More sophisticated file type recognition
-- [ ] Scheduled cleaning capabilities
-- [ ] Advanced filtering and search options
-- [ ] Export scan results to CSV/JSON
-- [ ] Integration with macOS Spotlight for enhanced file metadata
-
----
 
 **Made with ❤️ for macOS users who want to keep their systems clean and organized.**
