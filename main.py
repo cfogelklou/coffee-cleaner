@@ -102,6 +102,7 @@ def main(page: ft.Page):
                 return handler
             cat_checkbox.on_change = make_cat_toggle(cat, sorted_items, cat_checkbox)
             quick_clean_file_list.controls.append(cat_checkbox)
+            
             # Items
             for it in sorted_items:
                 item_cb = ft.Checkbox(value=it.path in current_result["selected"], label=None)
@@ -117,11 +118,67 @@ def main(page: ft.Page):
                     return handler
                 item_cb.on_change = make_item_toggle(it.path)
                 rel = os.path.relpath(it.path, os.path.expanduser("~"))
+                
+                # Create AI analysis handler for Quick Clean items
+                def create_quick_clean_ai_handler(path):
+                    def handler(e):
+                        # Show loading state
+                        e.control.icon = ft.Icons.HOURGLASS_EMPTY
+                        e.control.tooltip = "Analyzing..."
+                        page.update()
+
+                        # Perform AI analysis in a separate thread
+                        def analyze():
+                            result = ai_analyze_path(path)
+
+                            # Update the UI on the main thread
+                            def update_ui():
+                                # Find and update the AI icon in Quick Clean list
+                                for control in quick_clean_file_list.controls:
+                                    if isinstance(control, ft.Row) and len(control.controls) >= 4:
+                                        # Check if this row contains our path
+                                        if len(control.controls) > 2 and hasattr(control.controls[2], 'tooltip'):
+                                            if control.controls[2].tooltip == path:
+                                                # Update AI icon (last control in the row)
+                                                ai_icon = control.controls[3]
+                                                ai_icon.icon = ft.Icons.PSYCHOLOGY
+                                                ai_icon.tooltip = result["reason"]
+                                                ai_icon.icon_color = get_safety_color(result["safety"])
+                                                page.update()
+                                                break
+
+                            update_ui()
+
+                        threading.Thread(target=analyze, daemon=True).start()
+
+                    return handler
+
+                # Check for cached AI analysis
+                normalized_path = it.path
+                cached_ai = config_manager.get_cached_analysis(normalized_path)
+                if cached_ai:
+                    ai_icon_color = get_safety_color(cached_ai.get("safety", "grey"))
+                    ai_icon_tooltip = cached_ai.get("reason", "AI analysis available")
+                    ai_icon_icon = ft.Icons.PSYCHOLOGY
+                else:
+                    ai_icon_color = None
+                    ai_icon_tooltip = "Click for AI analysis"
+                    ai_icon_icon = ft.Icons.PSYCHOLOGY_OUTLINED
+
+                ai_icon = ft.IconButton(
+                    icon=ai_icon_icon,
+                    tooltip=ai_icon_tooltip,
+                    icon_size=16,
+                    on_click=create_quick_clean_ai_handler(it.path),
+                    icon_color=ai_icon_color,
+                )
+
                 quick_clean_file_list.controls.append(
                     ft.Row([
                         ft.Container(width=48, content=item_cb),
                         ft.Text(qc_format_size(it.size), width=90),
                         ft.Text(rel, expand=True, tooltip=it.path),
+                        ai_icon,  # Add AI icon to each item
                     ], spacing=6, alignment=ft.MainAxisAlignment.START)
                 )
 
