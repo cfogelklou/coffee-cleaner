@@ -664,7 +664,7 @@ def main(page: ft.Page):
                 error_count += 1
 
         # Show results in scan status
-        scan_status_text.value = f"Deletion complete. {'\n'.join(deletion_results[:3])}"
+        scan_status_text.value = "Deletion complete. " + "\n".join(deletion_results[:3])
         if len(deletion_results) > 3:
             scan_status_text.value += f"\n... and {len(deletion_results) - 3} more results"
 
