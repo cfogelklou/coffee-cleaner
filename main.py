@@ -235,9 +235,9 @@ def main(page: ft.Page):
         debug_log(f"Button state: has_selection={has_selection}, has_unsafe={has_unsafe}, enabled={button_should_be_enabled}")
         
         delete_button.disabled = not button_should_be_enabled
+        delete_button.visible = has_selection
         page.update()
-        
-        debug_log(f"Delete button disabled state is now: {delete_button.disabled}")
+        debug_log(f"Delete button disabled state is now: {delete_button.disabled}, visible: {delete_button.visible}")
 
     # Forward declaration of scan_and_display function
     def scan_and_display(path):
@@ -499,6 +499,7 @@ def main(page: ft.Page):
         scan_status_text.value = (
             f"Scan of {current_path} complete. Found {len(results)} items."
         )
+        delete_button.visible = False
         page.update()
 
     def update_breadcrumbs(path):
@@ -572,6 +573,7 @@ def main(page: ft.Page):
         disabled=True,
         bgcolor=ft.Colors.RED_400,
         color=ft.Colors.WHITE,
+        visible=False,  # Start hidden
     )
     debug_log(f"Delete button created: {delete_button}")
     debug_log(f"Delete button on_click handler: {delete_button.on_click}")
