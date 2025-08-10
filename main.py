@@ -371,6 +371,19 @@ def main(page: ft.Page):
     breadcrumb_row = ft.Row([], spacing=5)
 
     scan_thread_state = {"cancelled": False, "current_path": os.path.expanduser("~")}
+    
+    # Directory scan cache - stores scan results to avoid rescanning
+    directory_cache = {}
+    MAX_CACHE_SIZE = 50  # Limit cache to 50 directories
+    
+    def manage_cache():
+        """Keep cache size under control by removing oldest entries"""
+        if len(directory_cache) > MAX_CACHE_SIZE:
+            # Remove oldest 10 entries (simple FIFO)
+            oldest_keys = list(directory_cache.keys())[:10]
+            for key in oldest_keys:
+                del directory_cache[key]
+            debug_log(f"[DiskAnalyzer] Cache trimmed, now has {len(directory_cache)} entries")
 
     def get_size_threaded(path_info):
         path = path_info["path"]
@@ -457,6 +470,12 @@ def main(page: ft.Page):
         if not scan_thread_state["cancelled"]:
             results.sort(key=lambda x: x["size"], reverse=True)
             update_status(f"Scan complete: {len(results)} items found in {os.path.basename(selected_path)}")
+            
+            # Cache the results for future navigation
+            directory_cache[selected_path] = results
+            debug_log(f"[DiskAnalyzer] Cached results for: {selected_path}")
+            manage_cache()  # Keep cache size under control
+            
             display_scan_results(results, selected_path)
 
         reset_scan_ui()
@@ -494,6 +513,19 @@ def main(page: ft.Page):
     def scan_and_display(path):
         debug_log(f"[DiskAnalyzer] Entering directory for scan: {path}")
         update_status(f"Entering directory: {path}")
+        
+        # Check if we have cached results for this directory
+        if path in directory_cache:
+            debug_log(f"[DiskAnalyzer] Using cached results for: {path}")
+            update_status(f"Loading cached results for: {os.path.basename(path)}")
+            scan_thread_state["current_path"] = path
+            cached_results = directory_cache[path]
+            display_scan_results(cached_results, path)
+            scan_status_text.value = f"📋 Loaded cached scan of {path}. Found {len(cached_results)} items."
+            page.update()
+            return
+        
+        # No cache, perform new scan
         scan_button.disabled = True
         cancel_button.disabled = False
         directory_dropdown.disabled = True
@@ -600,6 +632,11 @@ def main(page: ft.Page):
             scan_status_text.value += f"\n... and {len(deletion_results) - 3} more results"
 
         update_status(f"Deletion complete: {deleted_count} deleted, {error_count} errors")
+        
+        # Invalidate cache for the current directory since files were deleted
+        if scan_thread_state["current_path"] in directory_cache:
+            del directory_cache[scan_thread_state["current_path"]]
+            debug_log(f"[DiskAnalyzer] Invalidated cache for: {scan_thread_state['current_path']}")
         
         # Refresh the current directory
         scan_and_display(scan_thread_state["current_path"])
@@ -804,7 +841,16 @@ def main(page: ft.Page):
         page.update()
 
     def scan_directory_handler(e):
-        scan_and_display(directory_dropdown.value)
+        selected_path = directory_dropdown.value
+        if selected_path == "clear_cache":
+            # Clear cache option selected
+            directory_cache.clear()
+            update_status(f"Directory cache cleared ({len(directory_cache)} entries)")
+            debug_log("[DiskAnalyzer] Directory cache manually cleared")
+            directory_dropdown.value = scan_thread_state["current_path"]  # Reset to current path
+            page.update()
+            return
+        scan_and_display(selected_path)
 
     def cancel_scan_handler(e):
         scan_thread_state["cancelled"] = True
@@ -824,6 +870,7 @@ def main(page: ft.Page):
             ft.dropdown.Option(os.path.expanduser("~/Pictures")),
             ft.dropdown.Option(os.path.expanduser("~/Movies")),
             ft.dropdown.Option(os.path.expanduser("~/Music")),
+            ft.dropdown.Option("clear_cache", "🗑️ Clear Cache"),
         ],
         width=350,
     )
