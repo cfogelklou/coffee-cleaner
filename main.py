@@ -61,7 +61,6 @@ def main(page: ft.Page):
     quick_clean_file_list = ft.ListView(height=260, spacing=2, auto_scroll=True)
     summary_text = ft.Text("", size=12, color=ft.Colors.GREY_700)
     progress_bar = ft.ProgressBar(width=400, value=0, visible=False)
-    select_all_checkbox = ft.Checkbox(label="Select All", value=True)
     current_result = {"items": [], "category_map": {}, "selected": set(), "total_size": 0}
 
     def selected_categories():
@@ -118,7 +117,7 @@ def main(page: ft.Page):
                 rel = os.path.relpath(it.path, os.path.expanduser("~"))
                 quick_clean_file_list.controls.append(
                     ft.Row([
-                        ft.Container(width=48, content=item_cb),  # Increased indentation here
+                        ft.Container(width=48, content=item_cb),
                         ft.Text(qc_format_size(it.size), width=90),
                         ft.Text(rel, expand=True, tooltip=it.path),
                     ], spacing=6, alignment=ft.MainAxisAlignment.START)
@@ -205,9 +204,6 @@ def main(page: ft.Page):
         ft.Text("Quick Clean", size=20, weight=ft.FontWeight.BOLD),
         progress_bar,
         ft.Row([
-            select_all_checkbox,
-        ], alignment=ft.MainAxisAlignment.START),
-        ft.Row([
             user_cache_checkbox,
             system_logs_checkbox,
         ], spacing=10),
@@ -229,17 +225,6 @@ def main(page: ft.Page):
         ),
         ft.Row([summary_text], alignment=ft.MainAxisAlignment.START),
     ], spacing=10, alignment=ft.MainAxisAlignment.START)
-
-    def toggle_select_all(e):
-        if select_all_checkbox.value:
-            for it in current_result["items"]:
-                current_result["selected"].add(it.path)
-        else:
-            current_result["selected"].clear()
-        rebuild_list_ui()
-        update_summary()
-        page.update()
-    select_all_checkbox.on_change = toggle_select_all
 
     # --- Disk Analyzer Tab --- #
     scan_status_text = ft.Text("")
@@ -329,7 +314,7 @@ def main(page: ft.Page):
     def check_delete_button_state():
         """Check if delete button should be enabled based on selections."""
         debug_log("=== CHECKING DELETE BUTTON STATE ===")
-        
+
         has_selection = False
         has_unsafe = False
 
@@ -349,7 +334,7 @@ def main(page: ft.Page):
 
         button_should_be_enabled = has_selection and not has_unsafe
         debug_log(f"Button state: has_selection={has_selection}, has_unsafe={has_unsafe}, enabled={button_should_be_enabled}")
-        
+
         delete_button.disabled = not button_should_be_enabled
         delete_button.visible = has_selection
         page.update()
@@ -363,7 +348,7 @@ def main(page: ft.Page):
         scan_status_text.value = f"Scanning {path}..."
         scan_results_list.controls.clear()
         page.update()
-        
+
         threading.Thread(
             target=scan_directory_thread, args=(path,), daemon=True
         ).start()
@@ -396,35 +381,35 @@ def main(page: ft.Page):
     def show_confirmation_ui(selected_items):
         """Show inline confirmation UI instead of modal dialog."""
         debug_log(f"Showing confirmation UI for {len(selected_items)} items")
-        
+
         # Update confirmation message
         if len(selected_items) == 1:
             message = f"Delete '{os.path.basename(selected_items[0]['path'])}'?"
         else:
             message = f"Delete {len(selected_items)} selected items?"
-        
+
         confirmation_row.controls[0].value = message
-        
+
         # Set up Yes button
         def confirm_deletion(e):
             debug_log("User confirmed deletion")
             confirmation_row.visible = False
             delete_button.visible = True
             page.update()
-            
+
             # Perform the actual deletion
             perform_deletion(selected_items)
-        
-        # Set up Cancel button  
+
+        # Set up Cancel button
         def cancel_deletion(e):
             debug_log("User cancelled deletion")
             confirmation_row.visible = False
             delete_button.visible = True
             page.update()
-        
+
         confirmation_row.controls[1].on_click = confirm_deletion
         confirmation_row.controls[2].on_click = cancel_deletion
-        
+
         # Show confirmation UI and hide delete button
         confirmation_row.visible = True
         delete_button.visible = False
@@ -433,7 +418,7 @@ def main(page: ft.Page):
     def perform_deletion(selected_items):
         """Actually delete the selected files and show results."""
         debug_log(f"Performing deletion of {len(selected_items)} items")
-        
+
         deletion_results = []
         for item in selected_items:
             try:
@@ -448,22 +433,22 @@ def main(page: ft.Page):
                 error_msg = f"✗ Failed to delete {os.path.basename(item['path'])}: {str(ex)}"
                 deletion_results.append(error_msg)
                 debug_log(f"Failed to delete {item['path']}: {ex}")
-        
+
         # Show results in scan status
         scan_status_text.value = f"Deletion complete. {'\n'.join(deletion_results[:3])}"
         if len(deletion_results) > 3:
             scan_status_text.value += f"\n... and {len(deletion_results) - 3} more results"
-        
+
         # Refresh the current directory
         scan_and_display(scan_thread_state["current_path"])
 
     def simple_delete_selected_handler(e):
         """Handle delete button click with inline confirmation."""
         debug_log("Delete button clicked")
-        
+
         selected_items = []
         unsafe_items = []
-        
+
         # Collect selected items and check safety
         for control in scan_results_list.controls:
             if hasattr(control, 'trailing') and hasattr(control.trailing, 'controls'):
@@ -474,21 +459,21 @@ def main(page: ft.Page):
                         path = control.data
                         safety_info = get_safety_info(path)
                         selected_items.append({"path": path, "safety": safety_info['safety']})
-                        
+
                         if safety_info['safety'] == 'red':
                             unsafe_items.append(path)
-        
+
         if not selected_items:
             scan_status_text.value = "No items selected for deletion."
             page.update()
             return
-        
+
         if unsafe_items:
             unsafe_names = [os.path.basename(p) for p in unsafe_items]
             scan_status_text.value = f"Cannot delete unsafe items (red): {', '.join(unsafe_names)}"
             page.update()
             return
-        
+
         # Show inline confirmation
         show_confirmation_ui(selected_items)
 
@@ -681,7 +666,7 @@ def main(page: ft.Page):
 
     scan_button = ft.ElevatedButton(text="Scan", on_click=scan_directory_handler)
     cancel_button = ft.ElevatedButton(text="Cancel", on_click=cancel_scan_handler, disabled=True)
-    
+
     debug_log("Creating delete button with simple handler")
     delete_button = ft.ElevatedButton(
         text="Delete Selected",
