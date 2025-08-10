@@ -5,22 +5,23 @@ Configuration and constants for the Mac Cleaner & Analyzer application.
 # Debug flag - set to True to enable detailed logging
 DEBUG_MODE = True
 
+
 def debug_log(message):
     """Print debug messages if DEBUG_MODE is enabled."""
     if DEBUG_MODE:
         print(f"[DEBUG] {message}")
 
+
 # Pre-defined safety rules as specified in GEMINI.md - Comprehensive macOS Database
 PREDEFINED_RULES = {
     # === SAFE TO DELETE (GREEN) === #
-    
     # Cache directories - generally safe to delete
     "~/Library/Caches/*": {
         "safety": "green",
         "reason": "Application cache files. Generally safe to delete.",
     },
     "~/Library/Caches/com.apple.Safari/*": {
-        "safety": "green", 
+        "safety": "green",
         "reason": "Safari browser cache. Safe to delete, will be regenerated.",
     },
     "~/Library/Caches/com.google.Chrome/*": {
@@ -36,10 +37,9 @@ PREDEFINED_RULES = {
         "reason": "System cache files. Safe to delete, macOS will regenerate as needed.",
     },
     "/private/var/folders/*/C/*": {
-        "safety": "green", 
+        "safety": "green",
         "reason": "Temporary cache files. Safe to delete.",
     },
-    
     # Temporary files
     "/tmp/*": {
         "safety": "green",
@@ -49,7 +49,6 @@ PREDEFINED_RULES = {
         "safety": "green",
         "reason": "Application temporary files. Safe to delete.",
     },
-    
     # Downloads and user-controlled areas
     "~/Downloads/*": {
         "safety": "green",
@@ -63,7 +62,6 @@ PREDEFINED_RULES = {
         "safety": "green",
         "reason": "Items in trash. Safe to delete permanently.",
     },
-    
     # Log files (older ones typically safe)
     "/private/var/log/*": {
         "safety": "green",
@@ -73,25 +71,21 @@ PREDEFINED_RULES = {
         "safety": "green",
         "reason": "User application logs. Generally safe to delete.",
     },
-    
     # Browser data that can be safely removed
     "~/Library/Safari/Downloads.plist": {
         "safety": "green",
         "reason": "Safari downloads list. Safe to delete.",
     },
     "~/Library/Safari/History.db*": {
-        "safety": "green", 
+        "safety": "green",
         "reason": "Safari browsing history. Safe to delete if you don't need history.",
     },
-    
     # === CAUTION REQUIRED (ORANGE) === #
-    
     # iOS backups
     "~/Library/Application Support/MobileSync/Backup/*": {
         "safety": "orange",
         "reason": "iOS device backups. Safe to delete if you have recent cloud backups, but deletion is permanent.",
     },
-    
     # User data directories
     "~/Documents/*": {
         "safety": "orange",
@@ -109,7 +103,6 @@ PREDEFINED_RULES = {
         "safety": "orange",
         "reason": "User music files. Important files - be careful when deleting.",
     },
-    
     # Library directories with user settings
     "~/Library/*": {
         "safety": "orange",
@@ -139,7 +132,6 @@ PREDEFINED_RULES = {
         "safety": "orange",
         "reason": "Contact data. Deleting will remove address book entries.",
     },
-    
     # System directories that may have important data
     "/usr/local/*": {
         "safety": "orange",
@@ -161,9 +153,7 @@ PREDEFINED_RULES = {
         "safety": "orange",
         "reason": "Temporary files that persist across reboots. Usually safe but check contents.",
     },
-    
     # === UNSAFE TO DELETE (RED) === #
-    
     # Core system directories
     "/System/*": {
         "safety": "red",
@@ -174,7 +164,7 @@ PREDEFINED_RULES = {
         "reason": "System library files. Critical for macOS operation.",
     },
     "/bin/*": {
-        "safety": "red", 
+        "safety": "red",
         "reason": "Essential system binaries. Do not delete.",
     },
     "/sbin/*": {
@@ -201,7 +191,6 @@ PREDEFINED_RULES = {
         "safety": "red",
         "reason": "System shared files. Do not delete.",
     },
-    
     # Boot and core directories
     "/boot/*": {
         "safety": "red",
@@ -219,7 +208,6 @@ PREDEFINED_RULES = {
         "safety": "red",
         "reason": "Process information. Do not delete.",
     },
-    
     # Application directories (generally shouldn't delete entire folders)
     "/Applications/*": {
         "safety": "red",
@@ -229,7 +217,6 @@ PREDEFINED_RULES = {
         "safety": "red",
         "reason": "System utility applications. Do not delete.",
     },
-    
     # Core system support
     "/var/root/*": {
         "safety": "red",
@@ -247,7 +234,6 @@ PREDEFINED_RULES = {
         "safety": "red",
         "reason": "System spool files. Do not delete.",
     },
-    
     # User home directory structure (folders themselves)
     "~/Library/Keychains/login.keychain*": {
         "safety": "red",
@@ -257,16 +243,14 @@ PREDEFINED_RULES = {
         "safety": "red",
         "reason": "Login window preferences. Critical for user login.",
     },
-    
     # === COMMON FILE EXTENSIONS === #
-    
     # Safe file types (generally user-created content)
     "*.tmp": {
         "safety": "green",
         "reason": "Temporary file. Generally safe to delete.",
     },
     "*.cache": {
-        "safety": "green", 
+        "safety": "green",
         "reason": "Cache file. Safe to delete, will be regenerated if needed.",
     },
     "*.log": {
@@ -281,14 +265,12 @@ PREDEFINED_RULES = {
         "safety": "green",
         "reason": "Windows thumbnail cache. Safe to delete on macOS.",
     },
-    
     # Document files (user should decide)
     "*.doc": {"safety": "orange", "reason": "Document file. User should verify before deleting."},
     "*.docx": {"safety": "orange", "reason": "Document file. User should verify before deleting."},
     "*.pdf": {"safety": "orange", "reason": "PDF document. User should verify before deleting."},
     "*.txt": {"safety": "orange", "reason": "Text file. User should verify before deleting."},
     "*.rtf": {"safety": "orange", "reason": "Rich text file. User should verify before deleting."},
-    
     # Media files
     "*.jpg": {"safety": "orange", "reason": "Image file. User should verify before deleting."},
     "*.jpeg": {"safety": "orange", "reason": "Image file. User should verify before deleting."},
@@ -298,7 +280,6 @@ PREDEFINED_RULES = {
     "*.mov": {"safety": "orange", "reason": "Video file. User should verify before deleting."},
     "*.mp3": {"safety": "orange", "reason": "Audio file. User should verify before deleting."},
     "*.wav": {"safety": "orange", "reason": "Audio file. User should verify before deleting."},
-    
     # System and executable files
     "*.dylib": {
         "safety": "red",
@@ -309,7 +290,7 @@ PREDEFINED_RULES = {
         "reason": "macOS framework. Critical for system/application operation. Do not delete.",
     },
     "*.kext/*": {
-        "safety": "red", 
+        "safety": "red",
         "reason": "Kernel extension. Critical system component. Do not delete.",
     },
     "*.app/*": {
@@ -328,7 +309,7 @@ ai_analysis_cache = {}
 # AI Configuration
 AI_CONFIG = {
     "enabled": True,  # Set to False to disable AI analysis
-    "provider": "gemini",  # "gemini" or "openai" 
+    "provider": "gemini",  # "gemini" or "openai"
     "api_key": None,  # Will be loaded from environment or user input
     "model": "gemini-1.5-flash",  # Default Gemini model
     "timeout": 10,  # API request timeout in seconds

@@ -12,14 +12,11 @@ Notes:
 
 This module is lightweight and safe; if run on non-macOS it returns conservative defaults.
 """
-from __future__ import annotations
 
-import os
+
+from __future__ import annotations
 import platform
 import subprocess
-from dataclasses import dataclass
-from typing import List, Tuple
-
 
 
 def open_full_disk_access_pane() -> bool:
@@ -42,6 +39,7 @@ def open_full_disk_access_pane() -> bool:
         except Exception:
             continue
     return False
+
 
 __all__ = [
     "open_full_disk_access_pane",

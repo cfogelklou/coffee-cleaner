@@ -11,13 +11,13 @@ We purposely keep the scan shallow to stay fast:
 Deletion strategy: remove the returned paths (files or directories) directly.
 Applications will recreate needed cache directories automatically.
 """
+
 from __future__ import annotations
 
 import os
 import fnmatch
-import shutil
 from dataclasses import dataclass
-from typing import List, Dict, Tuple
+from typing import List, Tuple
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from config import debug_log
@@ -54,18 +54,22 @@ CATEGORY_LABELS = {
     APP_SUPPORT_CACHES: "App Support Caches",
 }
 
+
 @dataclass
 class QuickCleanItem:
     path: str
     size: int
     category: str
 
+
 @dataclass
 class QuickCleanResult:
     items: List[QuickCleanItem]
     total_size: int
 
+
 # ---------------- Size Helpers ---------------- #
+
 
 def format_size(size_bytes: int) -> str:
     if size_bytes <= 0:
@@ -92,7 +96,9 @@ def directory_size(path: str) -> int:
                 pass
     return total
 
+
 # ---------------- Gathering Functions ---------------- #
+
 
 def gather_user_cache() -> List[QuickCleanItem]:
     cache_root = os.path.join(HOME, "Library", "Caches")
@@ -111,6 +117,7 @@ def gather_user_cache() -> List[QuickCleanItem]:
     except OSError:
         pass
     return items
+
 
 def gather_system_logs() -> List[QuickCleanItem]:
     items: List[QuickCleanItem] = []
@@ -136,6 +143,7 @@ def gather_system_logs() -> List[QuickCleanItem]:
             continue
     return items
 
+
 def gather_trash() -> List[QuickCleanItem]:
     trash_root = os.path.join(HOME, ".Trash")
     items: List[QuickCleanItem] = []
@@ -157,6 +165,7 @@ def gather_trash() -> List[QuickCleanItem]:
         pass
     return items
 
+
 def gather_ios_backups() -> List[QuickCleanItem]:
     backup_root = os.path.join(HOME, "Library", "Application Support", "MobileSync", "Backup")
     items: List[QuickCleanItem] = []
@@ -172,6 +181,7 @@ def gather_ios_backups() -> List[QuickCleanItem]:
     except OSError:
         pass
     return items
+
 
 def gather_macos_installers() -> List[QuickCleanItem]:
     items: List[QuickCleanItem] = []
@@ -189,6 +199,7 @@ def gather_macos_installers() -> List[QuickCleanItem]:
     except OSError:
         pass
     return items
+
 
 def gather_xcode_derived_data() -> List[QuickCleanItem]:
     derived_data_root = os.path.join(HOME, "Library", "Developer", "Xcode", "DerivedData")
@@ -208,6 +219,7 @@ def gather_xcode_derived_data() -> List[QuickCleanItem]:
         pass
     return items
 
+
 def gather_ios_simulators() -> List[QuickCleanItem]:
     simulator_root = os.path.join(HOME, "Library", "Developer", "CoreSimulator", "Devices")
     items: List[QuickCleanItem] = []
@@ -224,12 +236,10 @@ def gather_ios_simulators() -> List[QuickCleanItem]:
         pass
     return items
 
+
 def gather_crash_reports() -> List[QuickCleanItem]:
     items: List[QuickCleanItem] = []
-    crash_paths = [
-        os.path.join(HOME, "Library", "Logs", "DiagnosticReports"),
-        "/Library/Logs/DiagnosticReports"
-    ]
+    crash_paths = [os.path.join(HOME, "Library", "Logs", "DiagnosticReports"), "/Library/Logs/DiagnosticReports"]
     for base in crash_paths:
         if not os.path.isdir(base):
             continue
@@ -249,16 +259,18 @@ def gather_crash_reports() -> List[QuickCleanItem]:
             continue
     return items
 
+
 def gather_mail_attachments() -> List[QuickCleanItem]:
     items: List[QuickCleanItem] = []
     # Check for both old and new Mail attachment locations
     mail_paths = [
         os.path.join(HOME, "Library", "Mail", "V*", "MailData", "Attachments"),
-        os.path.join(HOME, "Library", "Mail", "MailData", "Attachments")
+        os.path.join(HOME, "Library", "Mail", "MailData", "Attachments"),
     ]
-    
+
     for mail_path_pattern in mail_paths:
         import glob
+
         for mail_path in glob.glob(mail_path_pattern):
             if not os.path.isdir(mail_path):
                 continue
@@ -276,10 +288,11 @@ def gather_mail_attachments() -> List[QuickCleanItem]:
                 continue
     return items
 
+
 def gather_temp_files() -> List[QuickCleanItem]:
     items: List[QuickCleanItem] = []
     temp_paths = ["/private/var/tmp", "/private/var/folders"]
-    
+
     for base in temp_paths:
         if not os.path.isdir(base):
             continue
@@ -311,14 +324,11 @@ def gather_temp_files() -> List[QuickCleanItem]:
             continue
     return items
 
+
 def gather_disk_images() -> List[QuickCleanItem]:
     items: List[QuickCleanItem] = []
-    search_paths = [
-        os.path.join(HOME, "Downloads"),
-        os.path.join(HOME, "Documents"),
-        os.path.join(HOME, "Desktop")
-    ]
-    
+    search_paths = [os.path.join(HOME, "Downloads"), os.path.join(HOME, "Documents"), os.path.join(HOME, "Desktop")]
+
     for base in search_paths:
         if not os.path.isdir(base):
             continue
@@ -336,15 +346,16 @@ def gather_disk_images() -> List[QuickCleanItem]:
             continue
     return items
 
+
 def gather_app_support_caches() -> List[QuickCleanItem]:
     app_support_root = os.path.join(HOME, "Library", "Application Support")
     items: List[QuickCleanItem] = []
     if not os.path.isdir(app_support_root):
         return items
-    
+
     # Common cache subdirectories in Application Support
     cache_patterns = ["*Cache*", "*cache*", "*Caches*", "*caches*"]
-    
+
     try:
         for entry in os.scandir(app_support_root):
             if entry.is_dir(follow_symlinks=False):
@@ -365,6 +376,7 @@ def gather_app_support_caches() -> List[QuickCleanItem]:
         pass
     return items
 
+
 GATHERERS = {
     USER_CACHE: gather_user_cache,
     SYSTEM_LOGS: gather_system_logs,
@@ -381,6 +393,7 @@ GATHERERS = {
 }
 
 # ---------------- Public API ---------------- #
+
 
 def analyze_quick_clean(selected_categories: List[str]) -> QuickCleanResult:
     debug_log(f"Analyzing quick clean categories: {selected_categories}")
@@ -399,11 +412,13 @@ def analyze_quick_clean(selected_categories: List[str]) -> QuickCleanResult:
     debug_log(f"Quick clean analysis complete: {len(items)} items, total size {format_size(total_size)}")
     return QuickCleanResult(items=items, total_size=total_size)
 
+
 def perform_quick_clean(result: QuickCleanResult, categories: List[str]) -> Tuple[int, int]:
     # Filter items by categories in case user changed selection
     paths = [i.path for i in result.items if i.category in categories]
     debug_log(f"Performing quick clean deletion on {len(paths)} paths")
     return perform_deletion(paths)
+
 
 __all__ = [
     "USER_CACHE",
@@ -426,6 +441,7 @@ __all__ = [
     "perform_quick_clean",
     "format_size",
 ]
+
 
 def analyze_quick_clean_iter(selected_categories: List[str]):
     """Yield (category, items, total_size_for_category) sequentially for streaming UI updates."""

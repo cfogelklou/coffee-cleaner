@@ -1,6 +1,5 @@
 import os
 import fnmatch
-import time
 import json
 import flet as ft
 from config import PREDEFINED_RULES, debug_log
@@ -13,6 +12,7 @@ Provides safety level assessment for files and directories using predefined rule
 # Optional AI imports
 try:
     import google.generativeai as genai
+
     GEMINI_AVAILABLE = True
 except ImportError:
     GEMINI_AVAILABLE = False
@@ -20,6 +20,7 @@ except ImportError:
 
 try:
     import openai
+
     OPENAI_AVAILABLE = True
 except ImportError:
     OPENAI_AVAILABLE = False
@@ -60,7 +61,7 @@ def ai_analyze_path(path, force_provider=None):
     """
     Use AI to analyze unknown paths for safety assessment.
     Returns a dict with 'safety' (green/orange/red) and 'reason'.
-    
+
     Args:
         path: The file/directory path to analyze
         force_provider: Force use of specific AI provider ("gemini" or "openai")
@@ -76,12 +77,12 @@ def ai_analyze_path(path, force_provider=None):
 
     # Determine which provider to use
     provider = force_provider or config_manager.get_preferred_ai_provider()
-    
+
     # Check if AI analysis is enabled and we have API keys
     if not force_provider and not config_manager.is_ai_analysis_enabled():
         debug_log("AI analysis is disabled in settings")
         return _fallback_heuristic_analysis(normalized_path)
-    
+
     # Get the appropriate API key
     if provider == "gemini":
         api_key = config_manager.get_gemini_api_key()
@@ -89,7 +90,7 @@ def ai_analyze_path(path, force_provider=None):
         api_key = config_manager.get_openai_api_key()
     else:
         api_key = None
-    
+
     if not api_key or not api_key.strip():
         debug_log(f"No valid {provider} API key configured")
         if not force_provider:
@@ -128,45 +129,36 @@ def _fallback_heuristic_analysis(path):
     basename = os.path.basename(path).lower()
 
     # Safe patterns (green)
-    safe_patterns = [
-        'cache', 'temp', 'tmp', 'log', '.ds_store', 'thumbs.db',
-        '.localized', 'desktop.ini', 'icon\r'
-    ]
+    safe_patterns = ["cache", "temp", "tmp", "log", ".ds_store", "thumbs.db", ".localized", "desktop.ini", "icon\r"]
     if any(pattern in basename for pattern in safe_patterns):
         return {
             "safety": "green",
-            "reason": "Heuristic Analysis: Appears to be temporary/cache files. Likely safe to delete."
+            "reason": "Heuristic Analysis: Appears to be temporary/cache files. Likely safe to delete.",
         }
 
     # Safe file extensions
-    safe_extensions = ['.tmp', '.cache', '.log', '.bak', '.old', '.orig']
+    safe_extensions = [".tmp", ".cache", ".log", ".bak", ".old", ".orig"]
     if any(basename.endswith(ext) for ext in safe_extensions):
-        return {
-            "safety": "green",
-            "reason": "Heuristic Analysis: Temporary file extension. Likely safe to delete."
-        }
+        return {"safety": "green", "reason": "Heuristic Analysis: Temporary file extension. Likely safe to delete."}
 
     # Caution patterns (orange)
-    caution_patterns = ['config', 'pref', 'setting', 'preference', 'profile']
+    caution_patterns = ["config", "pref", "setting", "preference", "profile"]
     if any(pattern in basename for pattern in caution_patterns):
         return {
             "safety": "orange",
-            "reason": "Heuristic Analysis: Configuration or preference files. Deleting may affect application behavior."
+            "reason": (
+                "Heuristic Analysis: Configuration or preference files. "
+                "Deleting may affect application behavior."
+            ),
         }
 
     # System/dangerous patterns (red)
-    danger_patterns = ['system', 'kernel', 'driver', 'boot', 'recovery', 'firmware']
+    danger_patterns = ["system", "kernel", "driver", "boot", "recovery", "firmware"]
     if any(pattern in basename for pattern in danger_patterns):
-        return {
-            "safety": "red",
-            "reason": "Heuristic Analysis: System-related files. Not recommended for deletion."
-        }
+        return {"safety": "red", "reason": "Heuristic Analysis: System-related files. Not recommended for deletion."}
 
     # Default to caution
-    return {
-        "safety": "orange",
-        "reason": "Heuristic Analysis: Unknown file type. Exercise caution when deleting."
-    }
+    return {"safety": "orange", "reason": "Heuristic Analysis: Unknown file type. Exercise caution when deleting."}
 
 
 def _analyze_with_gemini(path):
@@ -181,9 +173,10 @@ def _analyze_with_gemini(path):
 
     # Configure Gemini
     genai.configure(api_key=api_key)
-    
+
     # Use the model from configuration
     from config import AI_CONFIG
+
     model_name = AI_CONFIG.get("model", "gemini-1.5-flash")
     model = genai.GenerativeModel(model_name)
 
@@ -213,7 +206,7 @@ def _analyze_with_gemini(path):
     try:
         response_text = response.text.strip()
         debug_log(f"Raw Gemini response: {response_text}")
-        
+
         # Handle markdown code blocks
         if response_text.startswith("```json"):
             # Extract JSON from markdown code block
@@ -227,18 +220,18 @@ def _analyze_with_gemini(path):
             end = response_text.rfind("```")
             if end > start:
                 response_text = response_text[start:end].strip()
-        
+
         result = json.loads(response_text)
         debug_log(f"Parsed Gemini AI analysis for {path}: {result}")
-        
+
         # Validate the response format
         if not isinstance(result, dict) or "safety" not in result or "reason" not in result:
             raise ValueError("Invalid response format")
-        
+
         # Add AI prefix to reason
         result["reason"] = f"AI Analysis: {result['reason']}"
         return result
-        
+
     except (json.JSONDecodeError, ValueError) as e:
         debug_log(f"Failed to parse Gemini response: {response.text}")
         debug_log(f"Parse error: {str(e)}")
@@ -279,16 +272,14 @@ def _analyze_with_openai(path):
     """
 
     response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": prompt}],
-        max_tokens=200
+        model="gpt-3.5-turbo", messages=[{"role": "user", "content": prompt}], max_tokens=200
     )
 
     # Parse the response
     try:
         response_text = response.choices[0].message.content.strip()
         debug_log(f"Raw OpenAI response: {response_text}")
-        
+
         # Handle markdown code blocks
         if response_text.startswith("```json"):
             # Extract JSON from markdown code block
@@ -302,18 +293,18 @@ def _analyze_with_openai(path):
             end = response_text.rfind("```")
             if end > start:
                 response_text = response_text[start:end].strip()
-        
+
         result = json.loads(response_text)
         debug_log(f"Parsed OpenAI analysis for {path}: {result}")
-        
+
         # Validate the response format
         if not isinstance(result, dict) or "safety" not in result or "reason" not in result:
             raise ValueError("Invalid response format")
-        
+
         # Add AI prefix to reason
         result["reason"] = f"AI Analysis: {result['reason']}"
         return result
-        
+
     except (json.JSONDecodeError, ValueError) as e:
         debug_log(f"Failed to parse OpenAI response: {response.choices[0].message.content}")
         debug_log(f"Parse error: {str(e)}")
@@ -322,10 +313,5 @@ def _analyze_with_openai(path):
 
 def get_safety_color(safety_level):
     """Return the appropriate color for the safety level."""
-    colors = {
-        "green": ft.Colors.GREEN,
-        "orange": ft.Colors.ORANGE,
-        "red": ft.Colors.RED,
-        "grey": ft.Colors.GREY_400
-    }
+    colors = {"green": ft.Colors.GREEN, "orange": ft.Colors.ORANGE, "red": ft.Colors.RED, "grey": ft.Colors.GREY_400}
     return colors.get(safety_level, ft.Colors.GREY_400)

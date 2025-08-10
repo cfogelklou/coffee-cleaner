@@ -12,9 +12,9 @@ from safety_analysis import get_safety_info
 
 def show_confirmation_dialog(page, items_to_delete, on_confirm_callback):
     """Show confirmation dialog for file deletion."""
-    debug_log(f"=== CREATING CONFIRMATION DIALOG ===")
+    debug_log("=== CREATING CONFIRMATION DIALOG ===")
     debug_log(f"Items to delete: {len(items_to_delete)}")
-    
+
     if not items_to_delete:
         debug_log("No items to delete - returning early")
         return
@@ -24,7 +24,10 @@ def show_confirmation_dialog(page, items_to_delete, on_confirm_callback):
     if len(items_to_delete) > 10:
         file_list += f"\n... and {len(items_to_delete) - 10} more files"
 
-    content_text = f"Are you sure you want to delete the following {len(items_to_delete)} item(s)?\n\n{file_list}\n\nThis action cannot be undone."
+    content_text = (
+        f"Are you sure you want to delete the following {len(items_to_delete)} item(s)?\n\n"
+        f"{file_list}\n\nThis action cannot be undone."
+    )
 
     debug_log(f"Dialog content: {content_text[:100]}...")
 
@@ -65,12 +68,12 @@ def show_confirmation_dialog(page, items_to_delete, on_confirm_callback):
 
 def perform_deletion(items_to_delete):
     """Actually delete the files and directories."""
-    debug_log(f"=== PERFORMING ACTUAL DELETION ===")
+    debug_log("=== PERFORMING ACTUAL DELETION ===")
     debug_log(f"Items to delete: {len(items_to_delete)}")
-    
+
     deleted_count = 0
     error_count = 0
-    
+
     for item_path in items_to_delete:
         debug_log(f"Attempting to delete: {item_path}")
         try:
@@ -93,11 +96,11 @@ def perform_deletion(items_to_delete):
 def create_deletion_manager(page, scan_results_list, scan_thread_state, scan_and_display):
     """Create deletion manager with proper closures for the specific UI context."""
     debug_log("=== CREATING DELETION MANAGER ===")
-    
+
     def delete_selected_items():
         """Function that gets called after user confirms deletion."""
         debug_log("=== EXECUTING DELETION ===")
-        
+
         # Get currently selected items
         selected_items = []
         for control in scan_results_list.controls:
@@ -107,21 +110,21 @@ def create_deletion_manager(page, scan_results_list, scan_thread_state, scan_and
                     checkbox = trailing_controls[0]
                     if checkbox.value and hasattr(control, "data"):
                         selected_items.append(control.data)
-        
+
         debug_log(f"Selected items for deletion: {selected_items}")
-        
+
         if not selected_items:
             debug_log("No items selected for deletion")
             return
-        
+
         # Perform the actual deletion
         deleted_count, error_count = perform_deletion(selected_items)
-        
+
         # Refresh the current directory view
         current_path = scan_thread_state.get("current_path", os.path.expanduser("~"))
         debug_log(f"Refreshing view for: {current_path}")
         scan_and_display(current_path)
-        
+
         debug_log(f"Deletion summary - Deleted: {deleted_count}, Errors: {error_count}")
 
     def delete_selected_handler(e):
@@ -129,7 +132,7 @@ def create_deletion_manager(page, scan_results_list, scan_thread_state, scan_and
         debug_log("=== DELETE BUTTON CLICKED ===")
         debug_log(f"Event: {e}")
         debug_log(f"Event control: {e.control if hasattr(e, 'control') else 'No control'}")
-        
+
         try:
             # Get currently selected items for the confirmation dialog
             selected_items = []
@@ -140,32 +143,33 @@ def create_deletion_manager(page, scan_results_list, scan_thread_state, scan_and
                         checkbox = trailing_controls[0]
                         if checkbox.value and hasattr(control, "data"):
                             selected_items.append(control.data)
-            
+
             debug_log(f"Selected items: {selected_items}")
-            
+
             if not selected_items:
                 debug_log("No items selected - not showing dialog")
                 return
-            
+
             # Check for unsafe items
             unsafe_items = []
             for item_path in selected_items:
                 safety_info = get_safety_info(item_path)
                 if safety_info["safety"] == "red":
                     unsafe_items.append(item_path)
-            
+
             if unsafe_items:
                 debug_log(f"Found unsafe items: {unsafe_items}")
                 # Could show a warning dialog here
                 return
-            
+
             # Show confirmation dialog
             debug_log("Showing confirmation dialog...")
             show_confirmation_dialog(page, selected_items, delete_selected_items)
-            
+
         except Exception as ex:
             debug_log(f"ERROR in delete_selected_handler: {ex}")
             import traceback
+
             debug_log(f"Traceback: {traceback.format_exc()}")
 
     debug_log("Deletion manager created successfully")

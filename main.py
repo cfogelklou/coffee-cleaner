@@ -4,13 +4,11 @@ A multi-functional macOS utility for cleaning junk files and analyzing disk usag
 """
 
 import flet as ft
-import time
 import os
 import math
 import threading
-import shutil
 import logging
-from datetime import datetime
+import shutil
 from concurrent.futures import ThreadPoolExecutor
 
 # Import our custom modules
@@ -32,8 +30,6 @@ from quick_clean import (
     TEMP_FILES,
     DISK_IMAGES,
     APP_SUPPORT_CACHES,
-    analyze_quick_clean,
-    perform_quick_clean,
     format_size as qc_format_size,
 )
 
@@ -48,18 +44,15 @@ def main(page: ft.Page):
     log_filename = os.path.join(os.path.expanduser("~"), "Desktop", "mac_cleaner.log")
     logging.basicConfig(
         level=logging.INFO,
-        format='%(asctime)s - %(levelname)s - %(message)s',
-        handlers=[
-            logging.FileHandler(log_filename),
-            logging.StreamHandler()  # Also log to console
-        ]
+        format="%(asctime)s - %(levelname)s - %(message)s",
+        handlers=[logging.FileHandler(log_filename), logging.StreamHandler()],  # Also log to console
     )
     logger = logging.getLogger(__name__)
     logger.info("Mac Cleaner & Analyzer started")
 
     # Status text for file events
     status_text = ft.Text("Ready", size=10, color=ft.Colors.GREY_600)
-    
+
     def update_status(message):
         """Update the status text and log the message"""
         status_text.value = message
@@ -148,16 +141,20 @@ def main(page: ft.Page):
             total_cat_size = sum(i.size for i in sorted_items)
             is_folded = category_folded.get(cat, True)  # Default to folded
             chevron_icon = ft.Icons.KEYBOARD_ARROW_RIGHT if is_folded else ft.Icons.KEYBOARD_ARROW_DOWN
+
             def make_fold_toggle(category):
                 def handler(e):
                     category_folded[category] = not category_folded.get(category, True)
                     rebuild_list_ui()
                     page.update()
+
                 return handler
+
             cat_checkbox = ft.Checkbox(
                 value=all(i.path in current_result["selected"] for i in sorted_items) and len(sorted_items) > 0,
-                label=f"{cat.replace('_',' ').title()} ({qc_format_size(subtotal)}/{qc_format_size(total_cat_size)})",
+                label=f"{cat.replace('_', ' ').title()} ({qc_format_size(subtotal)}/{qc_format_size(total_cat_size)})",
             )
+
             def make_cat_toggle(category, category_items, cb):
                 def handler(e):
                     if cb.value:
@@ -169,17 +166,21 @@ def main(page: ft.Page):
                     update_summary()
                     rebuild_list_ui()
                     page.update()
+
                 return handler
+
             cat_checkbox.on_change = make_cat_toggle(cat, sorted_items, cat_checkbox)
             quick_clean_file_list.controls.append(
-                ft.Row([
-                    ft.IconButton(icon=chevron_icon, on_click=make_fold_toggle(cat), icon_size=18),
-                    cat_checkbox
-                ], spacing=4, alignment=ft.MainAxisAlignment.START)
+                ft.Row(
+                    [ft.IconButton(icon=chevron_icon, on_click=make_fold_toggle(cat), icon_size=18), cat_checkbox],
+                    spacing=4,
+                    alignment=ft.MainAxisAlignment.START,
+                )
             )
             if not is_folded:
                 for it in sorted_items:
                     item_cb = ft.Checkbox(value=it.path in current_result["selected"], label=None)
+
                     def make_item_toggle(path):
                         def handler(e):
                             if e.control.value:
@@ -189,20 +190,25 @@ def main(page: ft.Page):
                             update_summary()
                             rebuild_list_ui()
                             page.update()
+
                         return handler
+
                     item_cb.on_change = make_item_toggle(it.path)
                     rel = os.path.relpath(it.path, os.path.expanduser("~"))
+
                     def create_quick_clean_ai_handler(path):
                         def handler(e):
                             e.control.icon = ft.Icons.HOURGLASS_EMPTY
                             e.control.tooltip = "Analyzing..."
                             page.update()
+
                             def analyze():
                                 result = ai_analyze_path(path)
+
                                 def update_ui():
                                     for control in quick_clean_file_list.controls:
                                         if isinstance(control, ft.Row) and len(control.controls) >= 4:
-                                            if len(control.controls) > 2 and hasattr(control.controls[2], 'tooltip'):
+                                            if len(control.controls) > 2 and hasattr(control.controls[2], "tooltip"):
                                                 if control.controls[2].tooltip == path:
                                                     ai_icon = control.controls[3]
                                                     ai_icon.icon = ft.Icons.PSYCHOLOGY
@@ -210,9 +216,13 @@ def main(page: ft.Page):
                                                     ai_icon.icon_color = get_safety_color(result["safety"])
                                                     page.update()
                                                     break
+
                                 update_ui()
+
                             threading.Thread(target=analyze, daemon=True).start()
+
                         return handler
+
                     normalized_path = it.path
                     cached_ai = config_manager.get_cached_analysis(normalized_path)
                     if cached_ai:
@@ -231,17 +241,23 @@ def main(page: ft.Page):
                         icon_color=ai_icon_color,
                     )
                     quick_clean_file_list.controls.append(
-                        ft.Row([
-                            ft.Container(width=48, content=item_cb),
-                            ft.Text(qc_format_size(it.size), width=90),
-                            ft.Text(rel, expand=True, tooltip=it.path),
-                            ai_icon,
-                        ], spacing=6, alignment=ft.MainAxisAlignment.START)
+                        ft.Row(
+                            [
+                                ft.Container(width=48, content=item_cb),
+                                ft.Text(qc_format_size(it.size), width=90),
+                                ft.Text(rel, expand=True, tooltip=it.path),
+                                ai_icon,
+                            ],
+                            spacing=6,
+                            alignment=ft.MainAxisAlignment.START,
+                        )
                     )
 
     def update_summary():
         total_selected_size = sum(i.size for i in current_result["items"] if i.path in current_result["selected"])
-        summary_text.value = f"Selected: {len(current_result['selected'])} items • {qc_format_size(total_selected_size)}"
+        summary_text.value = (
+            f"Selected: {len(current_result['selected'])} items • {qc_format_size(total_selected_size)}"
+        )
         clean_button.disabled = total_selected_size == 0
 
     def analyze_files(e):
@@ -280,7 +296,7 @@ def main(page: ft.Page):
                     progress_bar.value = (idx + 1) / total_cats
                     rebuild_list_ui()
                     update_summary()
-                    analysis_results_text.value = f"Loaded {cat.replace('_',' ')} ({qc_format_size(cat_size)})"
+                    analysis_results_text.value = f"Loaded {cat.replace('_', ' ')} ({qc_format_size(cat_size)})"
                     page.update()
                 except Exception as ex:
                     analysis_results_text.value = f"Streaming error: {ex}"
@@ -293,13 +309,12 @@ def main(page: ft.Page):
                 page.update()
             except Exception:
                 pass
+
         threading.Thread(target=run_analysis, daemon=True).start()
 
     def clean_files(e):
         # Build list of selected items as dicts with 'path' key (to match perform_deletion signature)
-        selected_items = [
-            i.path for i in current_result["items"] if i.path in current_result["selected"]
-        ]
+        selected_items = [i.path for i in current_result["items"] if i.path in current_result["selected"]]
         if not selected_items:
             return
         analysis_results_text.value = f"Deleting {len(selected_items)} selected items..."
@@ -308,6 +323,7 @@ def main(page: ft.Page):
 
         def run_delete():
             from deletion import perform_deletion as deletion_perform_deletion
+
             deleted, errors = deletion_perform_deletion(selected_items)
             try:
                 analysis_results_text.value = f"Deleted {deleted} items with {errors} errors"
@@ -320,49 +336,70 @@ def main(page: ft.Page):
                 analysis_results_text.value = f"Deletion UI error: {ex}"
                 update_status(f"Quick clean error: {ex}")
                 page.update()
+
         threading.Thread(target=run_delete, daemon=True).start()
 
     analyze_button.on_click = analyze_files
     clean_button.on_click = clean_files
 
-    quick_clean_tab = ft.Column([
-        ft.Text("Quick Clean", size=20, weight=ft.FontWeight.BOLD),
-        progress_bar,
-        ft.Text("Select categories to clean:", size=14, weight=ft.FontWeight.W_500),
-        ft.Row([
-            ft.Column([
-                user_cache_checkbox,
-                system_logs_checkbox,
-                trash_checkbox,
-                ios_backups_checkbox,
-            ], spacing=5),
-            ft.Column([
-                macos_installers_checkbox,
-                xcode_derived_data_checkbox,
-                ios_simulators_checkbox,
-                crash_reports_checkbox,
-            ], spacing=5),
-            ft.Column([
-                mail_attachments_checkbox,
-                temp_files_checkbox,
-                disk_images_checkbox,
-                app_support_caches_checkbox,
-            ], spacing=5),
-        ], spacing=20, alignment=ft.MainAxisAlignment.START),
-        ft.Row([
-            analyze_button,
-            clean_button,
-        ], spacing=10),
-        analysis_results_text,
-        ft.Container(
-            content=quick_clean_file_list,
-            border=ft.border.all(1, "#1F000000"),
-            border_radius=5,
-            padding=8,
-            expand=True,
-        ),
-        ft.Row([summary_text], alignment=ft.MainAxisAlignment.START),
-    ], spacing=10, alignment=ft.MainAxisAlignment.START)
+    quick_clean_tab = ft.Column(
+        [
+            ft.Text("Quick Clean", size=20, weight=ft.FontWeight.BOLD),
+            progress_bar,
+            ft.Text("Select categories to clean:", size=14, weight=ft.FontWeight.W_500),
+            ft.Row(
+                [
+                    ft.Column(
+                        [
+                            user_cache_checkbox,
+                            system_logs_checkbox,
+                            trash_checkbox,
+                            ios_backups_checkbox,
+                        ],
+                        spacing=5,
+                    ),
+                    ft.Column(
+                        [
+                            macos_installers_checkbox,
+                            xcode_derived_data_checkbox,
+                            ios_simulators_checkbox,
+                            crash_reports_checkbox,
+                        ],
+                        spacing=5,
+                    ),
+                    ft.Column(
+                        [
+                            mail_attachments_checkbox,
+                            temp_files_checkbox,
+                            disk_images_checkbox,
+                            app_support_caches_checkbox,
+                        ],
+                        spacing=5,
+                    ),
+                ],
+                spacing=20,
+                alignment=ft.MainAxisAlignment.START,
+            ),
+            ft.Row(
+                [
+                    analyze_button,
+                    clean_button,
+                ],
+                spacing=10,
+            ),
+            analysis_results_text,
+            ft.Container(
+                content=quick_clean_file_list,
+                border=ft.border.all(1, "#1F000000"),
+                border_radius=5,
+                padding=8,
+                expand=True,
+            ),
+            ft.Row([summary_text], alignment=ft.MainAxisAlignment.START),
+        ],
+        spacing=10,
+        alignment=ft.MainAxisAlignment.START,
+    )
 
     # --- Disk Analyzer Tab --- #
     scan_status_text = ft.Text("")
@@ -371,11 +408,11 @@ def main(page: ft.Page):
     breadcrumb_row = ft.Row([], spacing=5)
 
     scan_thread_state = {"cancelled": False, "current_path": os.path.expanduser("~")}
-    
+
     # Directory scan cache - stores scan results to avoid rescanning
     directory_cache = {}
     MAX_CACHE_SIZE = 50  # Limit cache to 50 directories
-    
+
     def manage_cache():
         """Keep cache size under control by removing oldest entries"""
         if len(directory_cache) > MAX_CACHE_SIZE:
@@ -391,7 +428,7 @@ def main(page: ft.Page):
             return None
 
         update_status(f"Scanning: {os.path.basename(path)}")
-        
+
         total_size = 0
         try:
             if path_info["is_dir"]:
@@ -470,12 +507,12 @@ def main(page: ft.Page):
         if not scan_thread_state["cancelled"]:
             results.sort(key=lambda x: x["size"], reverse=True)
             update_status(f"Scan complete: {len(results)} items found in {os.path.basename(selected_path)}")
-            
+
             # Cache the results for future navigation
             directory_cache[selected_path] = results
             debug_log(f"[DiskAnalyzer] Cached results for: {selected_path}")
             manage_cache()  # Keep cache size under control
-            
+
             display_scan_results(results, selected_path)
 
         reset_scan_ui()
@@ -502,7 +539,9 @@ def main(page: ft.Page):
                             break
 
         button_should_be_enabled = has_selection and not has_unsafe
-        debug_log(f"Button state: has_selection={has_selection}, has_unsafe={has_unsafe}, enabled={button_should_be_enabled}")
+        debug_log(
+            f"Button state: has_selection={has_selection}, has_unsafe={has_unsafe}, enabled={button_should_be_enabled}"
+        )
 
         delete_button.disabled = not button_should_be_enabled
         delete_button.visible = has_selection
@@ -513,7 +552,7 @@ def main(page: ft.Page):
     def scan_and_display(path):
         debug_log(f"[DiskAnalyzer] Entering directory for scan: {path}")
         update_status(f"Entering directory: {path}")
-        
+
         # Check if we have cached results for this directory
         if path in directory_cache:
             debug_log(f"[DiskAnalyzer] Using cached results for: {path}")
@@ -524,7 +563,7 @@ def main(page: ft.Page):
             scan_status_text.value = f"📋 Loaded cached scan of {path}. Found {len(cached_results)} items."
             page.update()
             return
-        
+
         # No cache, perform new scan
         scan_button.disabled = True
         cancel_button.disabled = False
@@ -533,9 +572,7 @@ def main(page: ft.Page):
         scan_results_list.controls.clear()
         page.update()
 
-        threading.Thread(
-            target=scan_directory_thread, args=(path,), daemon=True
-        ).start()
+        threading.Thread(target=scan_directory_thread, args=(path,), daemon=True).start()
 
     # Create deletion manager with proper closure
     delete_selected_handler, delete_selected_items = create_deletion_manager(
@@ -609,7 +646,7 @@ def main(page: ft.Page):
         error_count = 0
         for item in selected_items:
             try:
-                path = item['path']
+                path = item["path"]
                 filename = os.path.basename(path)
                 if os.path.isdir(path):
                     shutil.rmtree(path)
@@ -632,12 +669,12 @@ def main(page: ft.Page):
             scan_status_text.value += f"\n... and {len(deletion_results) - 3} more results"
 
         update_status(f"Deletion complete: {deleted_count} deleted, {error_count} errors")
-        
+
         # Invalidate cache for the current directory since files were deleted
         if scan_thread_state["current_path"] in directory_cache:
             del directory_cache[scan_thread_state["current_path"]]
             debug_log(f"[DiskAnalyzer] Invalidated cache for: {scan_thread_state['current_path']}")
-        
+
         # Refresh the current directory
         scan_and_display(scan_thread_state["current_path"])
         return deleted_count, error_count
@@ -651,16 +688,16 @@ def main(page: ft.Page):
 
         # Collect selected items and check safety
         for control in scan_results_list.controls:
-            if hasattr(control, 'trailing') and hasattr(control.trailing, 'controls'):
+            if hasattr(control, "trailing") and hasattr(control.trailing, "controls"):
                 trailing_controls = control.trailing.controls
                 if len(trailing_controls) > 0 and isinstance(trailing_controls[0], ft.Checkbox):
                     checkbox = trailing_controls[0]
-                    if checkbox.value and hasattr(control, 'data'):
+                    if checkbox.value and hasattr(control, "data"):
                         path = control.data
                         safety_info = get_safety_info(path)
-                        selected_items.append({"path": path, "safety": safety_info['safety']})
+                        selected_items.append({"path": path, "safety": safety_info["safety"]})
 
-                        if safety_info['safety'] == 'red':
+                        if safety_info["safety"] == "red":
                             unsafe_items.append(path)
 
         if not selected_items:
@@ -797,9 +834,7 @@ def main(page: ft.Page):
 
             scan_results_list.controls.append(list_tile)
 
-        scan_status_text.value = (
-            f"Scan of {current_path} complete. Found {len(results)} items."
-        )
+        scan_status_text.value = f"Scan of {current_path} complete. Found {len(results)} items."
         delete_button.visible = False
         page.update()
 
@@ -940,15 +975,18 @@ def main(page: ft.Page):
 
     # Add the main content and status text at the bottom
     page.add(
-        ft.Column([
-            tabs,
-            ft.Container(
-                content=status_text,
-                padding=ft.padding.all(5),
-                bgcolor=ft.Colors.GREY_100,
-                border_radius=3,
-            )
-        ], expand=True)
+        ft.Column(
+            [
+                tabs,
+                ft.Container(
+                    content=status_text,
+                    padding=ft.padding.all(5),
+                    bgcolor=ft.Colors.GREY_100,
+                    border_radius=3,
+                ),
+            ],
+            expand=True,
+        )
     )
 
 
