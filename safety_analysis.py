@@ -133,13 +133,22 @@ def _fallback_heuristic_analysis(path):
     if any(pattern in basename for pattern in safe_patterns):
         return {
             "safety": "green",
-            "reason": "Heuristic Analysis: Appears to be temporary/cache files. Likely safe to delete. Add an API Key in Settings for AI analysis",
+            "reason": (
+                "Heuristic Analysis: Appears to be temporary/cache files. Likely safe to delete. "
+                "Add an API Key in Settings for AI analysis"
+            ),
         }
 
     # Safe file extensions
     safe_extensions = [".tmp", ".cache", ".log", ".bak", ".old", ".orig"]
     if any(basename.endswith(ext) for ext in safe_extensions):
-        return {"safety": "green", "reason": "Heuristic Analysis: Temporary file extension. Likely safe to delete. Add an API Key in Settings for AI analysis"}
+        return {
+            "safety": "green",
+            "reason": (
+                "Heuristic Analysis: Temporary file extension. Likely safe to delete. "
+                "Add an API Key in Settings for AI analysis"
+            ),
+        }
 
     # Caution patterns (orange)
     caution_patterns = ["config", "pref", "setting", "preference", "profile"]
@@ -147,17 +156,30 @@ def _fallback_heuristic_analysis(path):
         return {
             "safety": "orange",
             "reason": (
-                "Heuristic Analysis: Configuration or preference files. Deleting may affect application behavior. Add an API Key in Settings for AI analysis"
+                "Heuristic Analysis: Configuration or preference files. Deleting may affect "
+                "application behavior. Add an API Key in Settings for AI analysis"
             ),
         }
 
     # System/dangerous patterns (red)
     danger_patterns = ["system", "kernel", "driver", "boot", "recovery", "firmware"]
     if any(pattern in basename for pattern in danger_patterns):
-        return {"safety": "red", "reason": "Heuristic Analysis: System-related files. Not recommended for deletion. Add an API Key in Settings for AI analysis"}
+        return {
+            "safety": "red",
+            "reason": (
+                "Heuristic Analysis: System-related files. Not recommended for deletion. "
+                "Add an API Key in Settings for AI analysis"
+            ),
+        }
 
     # Default to caution
-    return {"safety": "orange", "reason": "Heuristic Analysis: Unknown file type. Exercise caution when deleting. Add an API Key in Settings for AI analysis"}
+    return {
+        "safety": "orange",
+        "reason": (
+            "Heuristic Analysis: Unknown file type. Exercise caution when deleting. "
+            "Add an API Key in Settings for AI analysis"
+        ),
+    }
 
 
 def _analyze_with_gemini(path):
@@ -183,7 +205,8 @@ def _analyze_with_gemini(path):
     prompt = f"""
     Analyze this macOS file/directory path for deletion safety: {path}
 
-    Context: This is a macOS file cleaner application. Users want to know if it's safe to delete this item.
+    Context: This is a macOS file cleaner application. Users want to know if it's safe to
+    delete this item.
 
     Please respond with ONLY a JSON object in this exact format:
     {{
@@ -254,7 +277,8 @@ def _analyze_with_openai(path):
     prompt = f"""
     Analyze this macOS file/directory path for deletion safety: {path}
 
-    Context: This is a macOS file cleaner application. Users want to know if it's safe to delete this item.
+    Context: This is a macOS file cleaner application. Users want to know if it's safe to
+    delete this item.
 
     Please respond with ONLY a JSON object in this exact format:
     {{
@@ -271,7 +295,9 @@ def _analyze_with_openai(path):
     """
 
     response = openai.ChatCompletion.create(
-        model="gpt-4.1", messages=[{"role": "user", "content": prompt}], max_tokens=200
+        model="gpt-4.1",
+        messages=[{"role": "user", "content": prompt}],
+        max_tokens=200,
     )
 
     # Parse the response
@@ -312,5 +338,10 @@ def _analyze_with_openai(path):
 
 def get_safety_color(safety_level):
     """Return the appropriate color for the safety level."""
-    colors = {"green": ft.Colors.GREEN, "orange": ft.Colors.ORANGE, "red": ft.Colors.RED, "grey": ft.Colors.GREY_400}
+    colors = {
+        "green": ft.Colors.GREEN,
+        "orange": ft.Colors.ORANGE,
+        "red": ft.Colors.RED,
+        "grey": ft.Colors.GREY_400,
+    }
     return colors.get(safety_level, ft.Colors.GREY_400)
