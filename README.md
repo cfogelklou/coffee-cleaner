@@ -1,8 +1,20 @@
-# Mac Cleaner & Analyzer
+# Mac Cleaner & Analyzer with AI Advice
 
 A powerful macOS utility application that provides two essential disk management features:
-- **Quick Clean**: Remove common junk files with a simple checkbox interface
-- **Disk Analyzer**: Advanced file explorer with AI-powered safety analysis for smart disk cleanup
+
+- **Quick Clean**: Remove common junk files with a simple checkbox interface. If you are unsure if something is safe to delete, ask AI!
+- **Disk Analyzer**: Let's you scan/clean any directory on your macOS Machine.
+
+## Screens
+
+### Quick Clean Screen
+![Quick Clean](docs/screen2.png)
+
+### Disk Analyzer
+![Disk Analyzer](docs/screen3.png)
+
+### Settings Screen with AI Setup
+![Settings](docs/screen1.png)
 
 ## Features
 
@@ -13,37 +25,26 @@ A powerful macOS utility application that provides two essential disk management
   - System Logs
   - Trash contents
   - iOS and local system (macOS) backups
-- ✅ Real-time size calculation and preview of files to be deleted
+  - etc.
+- ✅ Size calculation and preview of files to be deleted
+- ✅ AI-powered analysis for unknown file types
 
 ### Disk Analyzer
 - ✅ Multi-threaded directory scanning with progress indication
-- ✅ Interactive file explorer with drill-down navigation
 - ✅ Breadcrumb navigation for easy directory traversal
 - ✅ Safety-coded file analysis with colored indicators:
   - 🟢 Green: Safe to delete
   - 🟠 Orange: Caution advised
   - 🔴 Red: Do not delete (system files)
   - ⚪ Grey: Unknown (AI analysis available)
-- ✅ AI-powered analysis for unknown file types (placeholder implementation)
-- ✅ Checkbox-based file selection with smart safety controls
-- ✅ Inline confirmation UI for safe file deletion
-- ✅ Real-time deletion feedback and directory refresh
-- ✅ Breadcrumb navigation for easy path traversal
-- ✅ **Smart Safety Analysis** with color-coded indicators:
-  - 🟢 **Green**: Safe to delete
-  - 🟠 **Orange**: Use caution
-  - 🔴 **Red**: Do not delete (system files)
-  - ⚪ **Grey**: Unknown (AI analysis available)
-- ✅ **AI-Powered Analysis**: Click the brain icon for unknown files to get AI recommendations
-- ✅ **Safe Deletion**: Cannot delete items marked as unsafe (red)
-- ✅ Checkbox selection with bulk deletion capability
-- ✅ Real-time file size display with human-readable formatting
+- ✅ AI-powered analysis for unknown file types
 
 ## Safety Features
 
 The application includes comprehensive safety measures to prevent accidental deletion of important files:
 
 ### Pre-defined Safety Rules
+
 The app includes built-in knowledge of macOS file system structure:
 - System directories (`/System`, `/usr`, `/bin`) are marked as **red** (unsafe)
 - User data directories (`~/Documents`, `~/Pictures`) are marked as **orange** (caution)
@@ -51,7 +52,7 @@ The app includes built-in knowledge of macOS file system structure:
 - And many more predefined rules...
 
 ### AI Analysis
-For unknown files and directories, the application can perform AI analysis to provide intelligent safety recommendations and explanations.
+For unknown files and directories, the application can perform AI analysis to provide intelligent safety recommendations and explanations. You need to provide your own OpenAI or Google Gemini API Keys.
 
 ## Installation
 
@@ -90,11 +91,7 @@ For unknown files and directories, the application can perform AI analysis to pr
    venv/bin/python main.py
    ```
 
-### Option 2: Standalone Application (Coming Soon)
-
-A standalone `.app` bundle will be available for download from the releases page.
-
-## Building from Source
+### Building .app from Source
 
 To create a standalone application bundle:
 
@@ -125,7 +122,6 @@ To allow the app to clean and analyze all files on your Mac, you may need to gra
 
 If the app does not appear in the list, make sure it is signed (the build script does this automatically for development). For production/distribution, use a valid Developer ID certificate.
 
-
 ## Development
 
 ### Code Style
@@ -150,19 +146,20 @@ flake8 .
 ### Project Structure
 ```
 mac-cleaner/
-├── main.py                 # Main application entry point
-├── requirements.txt        # Python dependencies
-├── build.sh               # Build script for creating .app bundle
-├── pyproject.toml         # Code formatting and linting configuration
-├── .github/workflows/     # CI/CD pipeline
-├── GEMINI.md             # Project specification
-└── README.md             # This file
+├── main.py                         # Main application entry point
+├── requirements.txt                # Python dependencies
+├── build.sh                        # Build script for creating .app bundle
+├── pyproject.toml                  # Code formatting and linting configuration
+├── .github/workflows/              # CI/CD pipeline
+├── .github/copilot-instructions.md # AI Guidance & Context
+├── GEMINI.md                       # AI Guidance & Context
+└── README.md                       # This file
 ```
 
 ## Technology Stack
 
 - **GUI Framework**: [Flet](https://flet.dev/) - Modern Python UI framework
-- **AI Integration**: Google Gemini API for intelligent file analysis
+- **AI Integration**: Google Gemini & OpenAI API for intelligent file analysis
 - **Build Tool**: PyInstaller for creating standalone applications
 - **Multi-threading**: Concurrent file scanning with ThreadPoolExecutor
 - **Target Platform**: macOS
@@ -196,8 +193,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Support
 
 If you encounter any issues or have questions:
-1. Check the existing [Issues](https://github.com/cfogelklou/mac-cleaner/issues)
-2. Create a new issue with detailed information about your problem
-3. Include your macOS version and Python version in bug reports
+1. Fork the project and fix them yourself
 
-**Made with ❤️ for macOS users who want to keep their systems clean and organized.**
+**Made with ❤️ and AI for macOS users who want to keep their systems clean and organized.**
