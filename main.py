@@ -34,8 +34,8 @@ from quick_clean import (
 
 def main(page: ft.Page):
     page.title = "CoffeeCleaner"
-    page.window_width = 600
-    page.window_height = 700
+    page.window_width = 800
+    page.window_height = 900
     page.window_resizable = True
     
     # Get the absolute path to the icon file
@@ -570,6 +570,7 @@ def main(page: ft.Page):
         scan_button.disabled = True
         cancel_button.disabled = False
         directory_dropdown.disabled = True
+        manual_path_field.disabled = True
         scan_status_text.value = f"Scanning {path}..."
         scan_results_list.controls.clear()
         page.update()
@@ -871,6 +872,7 @@ def main(page: ft.Page):
         scan_button.disabled = False
         cancel_button.disabled = True
         directory_dropdown.disabled = False
+        manual_path_field.disabled = False
         if scan_thread_state["cancelled"]:
             scan_status_text.value = "Scan cancelled."
         scan_thread_state["cancelled"] = False
@@ -878,15 +880,39 @@ def main(page: ft.Page):
         page.update()
 
     def scan_directory_handler(e):
-        selected_path = directory_dropdown.value
-        if selected_path == "clear_cache":
-            # Clear cache option selected
-            directory_cache.clear()
-            update_status(f"Directory cache cleared ({len(directory_cache)} entries)")
-            debug_log("[DiskAnalyzer] Directory cache manually cleared")
-            directory_dropdown.value = scan_thread_state["current_path"]  # Reset to current path
-            page.update()
-            return
+        # Check if manual path is entered first
+        manual_path = manual_path_field.value.strip() if manual_path_field.value else ""
+        
+        if manual_path:
+            # Expand user path if it starts with ~
+            if manual_path.startswith("~"):
+                manual_path = os.path.expanduser(manual_path)
+            
+            # Validate that the path exists
+            if not os.path.exists(manual_path):
+                scan_status_text.value = f"Error: Path does not exist: {manual_path}"
+                page.update()
+                return
+            
+            # Validate that it's a directory
+            if not os.path.isdir(manual_path):
+                scan_status_text.value = f"Error: Path is not a directory: {manual_path}"
+                page.update()
+                return
+            
+            selected_path = manual_path
+        else:
+            # Use dropdown selection
+            selected_path = directory_dropdown.value
+            if selected_path == "clear_cache":
+                # Clear cache option selected
+                directory_cache.clear()
+                update_status(f"Directory cache cleared ({len(directory_cache)} entries)")
+                debug_log("[DiskAnalyzer] Directory cache manually cleared")
+                directory_dropdown.value = scan_thread_state["current_path"]  # Reset to current path
+                page.update()
+                return
+        
         scan_and_display(selected_path)
 
     def cancel_scan_handler(e):
@@ -898,20 +924,30 @@ def main(page: ft.Page):
         value=os.path.expanduser("~"),
         options=[
             ft.dropdown.Option("/", "System Root (/)"),
-            ft.dropdown.Option("/System", "System Files"),
-            ft.dropdown.Option("/Applications", "Applications"),
-            ft.dropdown.Option("/Users", "All Users"),
-            ft.dropdown.Option(os.path.expanduser("~"), "My Home"),
-            ft.dropdown.Option(os.path.expanduser("~/Library"), "My Library"),
-            ft.dropdown.Option(os.path.expanduser("~/Downloads"), "Downloads"),
-            ft.dropdown.Option(os.path.expanduser("~/Documents"), "Documents"),
-            ft.dropdown.Option(os.path.expanduser("~/Desktop"), "Desktop"),
-            ft.dropdown.Option(os.path.expanduser("~/Pictures"), "Pictures"),
-            ft.dropdown.Option(os.path.expanduser("~/Movies"), "Movies"),
-            ft.dropdown.Option(os.path.expanduser("~/Music"), "Music"),
+            ft.dropdown.Option("/System", "System Files (/System)"),
+            ft.dropdown.Option("/Applications", "Applications (/Applications)"),
+            ft.dropdown.Option("/Users", "All Users (/Users)"),
+            ft.dropdown.Option(os.path.expanduser("~"), "My Home (~/)"),
+            ft.dropdown.Option(os.path.expanduser("~/Library"), "My Library (~/Library)"),
+            ft.dropdown.Option(os.path.expanduser("~/Downloads"), "Downloads (~/Downloads)"),
+            ft.dropdown.Option(os.path.expanduser("~/Documents"), "Documents (~/Documents)"),
+            ft.dropdown.Option(os.path.expanduser("~/Desktop"), "Desktop (~/Desktop)"),
+            ft.dropdown.Option(os.path.expanduser("~/Pictures"), "Pictures (~/Pictures)"),
+            ft.dropdown.Option(os.path.expanduser("~/Movies"), "Movies (~/Movies)"),
+            ft.dropdown.Option(os.path.expanduser("~/Music"), "Music (~/Music)"),
             ft.dropdown.Option("clear_cache", "🗑️ Clear Cache"),
         ],
-        width=350,
+        width=400,
+    )
+
+    manual_path_field = ft.TextField(
+        label="Or enter custom path",
+        hint_text="e.g., /Users/username/CustomFolder",
+        width=400,
+        expand=True,
+        border_color=ft.Colors.OUTLINE,
+        border_width=1,
+        border_radius=5,
     )
 
     scan_button = ft.ElevatedButton(text="Scan", on_click=scan_directory_handler)
@@ -931,13 +967,32 @@ def main(page: ft.Page):
 
     disk_analyzer_tab = ft.Column(
         [
-            ft.Row(
-                [
-                    directory_dropdown,
-                    scan_button,
-                    cancel_button,
-                ],
-                alignment=ft.MainAxisAlignment.CENTER,
+            ft.Container(
+                content=ft.Row(
+                    [
+                        ft.Column(
+                            [
+                                directory_dropdown,
+                                manual_path_field,
+                            ],
+                            spacing=10,
+                            expand=True,
+                        ),
+                        ft.Column(
+                            [
+                                scan_button,
+                                cancel_button,
+                            ],
+                            spacing=10,
+                        ),
+                    ],
+                    alignment=ft.MainAxisAlignment.START,
+                    spacing=20,
+                ),
+                border=ft.border.all(1, ft.Colors.OUTLINE),
+                border_radius=8,
+                padding=15,
+                margin=ft.margin.only(bottom=10),
             ),
             ft.Row([breadcrumb_row], alignment=ft.MainAxisAlignment.START),
             ft.Row([scan_progress_bar], alignment=ft.MainAxisAlignment.CENTER),
