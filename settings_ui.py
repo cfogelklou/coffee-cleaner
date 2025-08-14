@@ -1,5 +1,5 @@
 """
-Settings UI for Mac Cleaner & Analyzer
+Settings UI for CoffeeCleaner
 Allows users to configure API keys and application preferences.
 """
 

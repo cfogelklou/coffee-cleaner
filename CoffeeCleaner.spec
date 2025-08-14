@@ -21,7 +21,7 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,
-    name='Mac Cleaner & Analyzer',
+    name='CoffeeCleaner',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -40,11 +40,11 @@ coll = COLLECT(
     strip=False,
     upx=True,
     upx_exclude=[],
-    name='Mac Cleaner & Analyzer',
+    name='CoffeeCleaner',
 )
 app = BUNDLE(
     coll,
-    name='Mac Cleaner & Analyzer.app',
+    name='CoffeeCleaner.app',
     icon=None,
     bundle_identifier=None,
 )

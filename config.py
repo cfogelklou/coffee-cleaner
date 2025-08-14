@@ -1,5 +1,5 @@
 """
-Configuration and constants for the Mac Cleaner & Analyzer application.
+Configuration and constants for the CoffeeCleaner application.
 """
 
 # Debug flag - set to True to enable detailed logging

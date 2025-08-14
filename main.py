@@ -1,5 +1,5 @@
 """
-Mac Cleaner & Analyzer - Main Application
+CoffeeCleaner - Main Application
 A multi-functional macOS utility for cleaning junk files and analyzing disk usage.
 """
 
@@ -35,7 +35,7 @@ from quick_clean import (
 
 
 def main(page: ft.Page):
-    page.title = "Mac Cleaner & Analyzer"
+    page.title = "CoffeeCleaner"
     page.window_width = 600
     page.window_height = 700
     page.window_resizable = True
@@ -48,7 +48,7 @@ def main(page: ft.Page):
         handlers=[logging.FileHandler(log_filename), logging.StreamHandler()],  # Also log to console
     )
     logger = logging.getLogger(__name__)
-    logger.info("Mac Cleaner & Analyzer started")
+    logger.info("CoffeeCleaner started")
 
     # Status text for file events
     status_text = ft.Text("Ready", size=10, color=ft.Colors.GREY_600)
@@ -60,7 +60,7 @@ def main(page: ft.Page):
         page.update()
 
     page.appbar = ft.AppBar(
-        title=ft.Text("Mac Cleaner & Analyzer"),
+        title=ft.Text("CoffeeCleaner"),
         center_title=True,
     )
 

@@ -1,4 +1,4 @@
-# Mac Cleaner & Analyzer with AI Advice
+# CoffeeCleaner
 
 A powerful macOS utility application that provides two essential disk management features:
 
@@ -66,8 +66,8 @@ For unknown files and directories, the application can perform AI analysis to pr
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/your-username/mac-cleaner.git
-   cd mac-cleaner
+   git clone https://github.com/your-username/coffeecleaner.git
+   cd coffeecleaner
    ```
 
 2. **Create and activate a virtual environment:**
@@ -107,7 +107,7 @@ To create a standalone application bundle:
    ```
 
 3. **Find the built application:**
-   The application will be created in `build/Mac Cleaner & Analyzer/Mac Cleaner & Analyzer.app`
+   The application will be created in `build/CoffeeCleaner/CoffeeCleaner.app`
 
 ### Granting Full Disk Access (macOS)
 
@@ -115,7 +115,7 @@ To allow the app to clean and analyze all files on your Mac, you may need to gra
 
 1. **Build and sign the app** (see build instructions above).
 2. Open **System Settings** > **Privacy & Security** > **Full Disk Access**.
-3. Click the **+** button and select the `.app` bundle from the `dist` directory (e.g., `dist/Mac Cleaner & Analyzer.app`).
+3. Click the **+** button and select the `.app` bundle from the `dist` directory (e.g., `dist/CoffeeCleaner.app`).
    - Do **not** select the binary inside the app bundle.
 4. Ensure the checkbox next to the app is enabled.
 5. Restart the app if it was running.
@@ -145,7 +145,7 @@ flake8 .
 
 ### Project Structure
 ```
-mac-cleaner/
+coffeecleaner/
 ├── main.py                         # Main application entry point
 ├── requirements.txt                # Python dependencies
 ├── build.sh                        # Build script for creating .app bundle
@@ -195,4 +195,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 If you encounter any issues or have questions:
 1. Fork the project and fix them yourself
 
-**Made with ❤️ and AI for macOS users who want to keep their systems clean and organized.**
+**Made with ❤️ for macOS users who want to keep their systems clean and organized.**

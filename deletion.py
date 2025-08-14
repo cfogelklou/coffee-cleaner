@@ -1,5 +1,5 @@
 """
-Deletion functionality for Mac Cleaner & Analyzer.
+Deletion functionality for CoffeeCleaner.
 Handles file deletion with safety checks and confirmation dialogs.
 """
 

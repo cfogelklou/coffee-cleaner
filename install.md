@@ -1,6 +1,6 @@
 # Developer Installation Guide
 
-This guide provides instructions for setting up the development environment for the Mac Cleaner & Analyzer application.
+This guide provides instructions for setting up the development environment for the CoffeeCleaner application.
 
 ## Prerequisites
 
@@ -12,8 +12,8 @@ This guide provides instructions for setting up the development environment for 
 First, clone the project repository to your local machine:
 
 ```bash
-git clone https://github.com/your-username/mac-cleaner.git
-cd mac-cleaner
+git clone https://github.com/your-username/coffeecleaner.git
+cd coffeecleaner
 ```
 
 ## 2. Create and Activate a Virtual Environment

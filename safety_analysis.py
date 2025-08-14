@@ -5,7 +5,7 @@ import flet as ft
 from config import PREDEFINED_RULES, debug_log
 from config_manager import config_manager
 
-"""Safety Analysis for Mac Cleaner & Analyzer.
+"""Safety Analysis for CoffeeCleaner.
 Provides safety level assessment for files and directories using predefined rules and AI analysis.
 """
 

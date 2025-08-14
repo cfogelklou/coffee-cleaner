@@ -1,4 +1,4 @@
-# Vibe Code Request: macOS Cleaner & Analyzer GUI (v5)
+# Vibe Code Request: CoffeeCleaner GUI (v5)
 
 ## 1. Core Idea
 Create a multi-functional macOS utility with two main features:
@@ -17,7 +17,7 @@ Create a multi-functional macOS utility with two main features:
 The application will use a tabbed interface.
 
 ### Window
-- **Title**: Mac Cleaner & Analyzer
+- **Title**: CoffeeCleaner
 - **Initial Dimensions**: 600px width, 700px height
 - **Resizable**
 

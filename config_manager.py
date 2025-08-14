@@ -1,5 +1,5 @@
 """
-Configuration Manager for Mac Cleaner & Analyzer
+Configuration Manager for CoffeeCleaner
 Handles API keys, user preferences, and application settings.
 """
 

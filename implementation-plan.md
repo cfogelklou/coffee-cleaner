@@ -1,6 +1,6 @@
-# Implementation Plan: Mac Cleaner & Analyzer
+# Implementation Plan: CoffeeCleaner
 
-This document outlines the iterative steps to build the Mac Cleaner & Analyzer application. Each step represents a milestone that should be verified by the user before proceeding to the next.
+This document outlines the iterative steps to build the CoffeeCleaner application. Each step represents a milestone that should be verified by the user before proceeding to the next.
 
 This plan adheres to the specifications outlined in `GEMINI.md` and `.github/copilot-instructions.md`.
 
