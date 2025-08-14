@@ -37,14 +37,14 @@ def main(page: ft.Page):
     page.window_width = 800
     page.window_height = 900
     page.window_resizable = True
-    
+
     # Get the absolute path to the icon file
     icon_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "icon.icns")
     if os.path.exists(icon_path):
         page.window_icon = icon_path
     else:
         debug_log(f"Icon file not found at: {icon_path}")
-    
+
     # Prevent bouncing icon on macOS
     page.window_always_on_top = False
     page.window_skip_task_bar = False
@@ -308,7 +308,9 @@ def main(page: ft.Page):
             # Final summary
             try:
                 total_size = sum(i.size for i in current_result["items"])
-                analysis_results_text.value = f"Found {qc_format_size(total_size)} of removable data. Expand to see details."
+                analysis_results_text.value = (
+                    f"Found {qc_format_size(total_size)} of removable data. Expand to see details."
+                )
                 progress_bar.visible = False
                 page.update()
             except Exception:
@@ -882,24 +884,24 @@ def main(page: ft.Page):
     def scan_directory_handler(e):
         # Check if manual path is entered first
         manual_path = manual_path_field.value.strip() if manual_path_field.value else ""
-        
+
         if manual_path:
             # Expand user path if it starts with ~
             if manual_path.startswith("~"):
                 manual_path = os.path.expanduser(manual_path)
-            
+
             # Validate that the path exists
             if not os.path.exists(manual_path):
                 scan_status_text.value = f"Error: Path does not exist: {manual_path}"
                 page.update()
                 return
-            
+
             # Validate that it's a directory
             if not os.path.isdir(manual_path):
                 scan_status_text.value = f"Error: Path is not a directory: {manual_path}"
                 page.update()
                 return
-            
+
             selected_path = manual_path
         else:
             # Use dropdown selection
@@ -912,7 +914,7 @@ def main(page: ft.Page):
                 directory_dropdown.value = scan_thread_state["current_path"]  # Reset to current path
                 page.update()
                 return
-        
+
         scan_and_display(selected_path)
 
     def cancel_scan_handler(e):
@@ -1024,11 +1026,11 @@ def main(page: ft.Page):
         license_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "LICENSE")
         license_text = ""
         try:
-            with open(license_path, 'r', encoding='utf-8') as f:
+            with open(license_path, "r", encoding="utf-8") as f:
                 license_text = f.read()
         except Exception as e:
             license_text = f"Error reading license file: {e}"
-        
+
         return ft.Column(
             [
                 ft.Text("License", size=20, weight=ft.FontWeight.BOLD),
