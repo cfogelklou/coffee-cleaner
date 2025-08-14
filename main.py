@@ -26,9 +26,7 @@ from quick_clean import (
     XCODE_DERIVED_DATA,
     IOS_SIMULATORS,
     CRASH_REPORTS,
-    MAIL_ATTACHMENTS,
     TEMP_FILES,
-    DISK_IMAGES,
     APP_SUPPORT_CACHES,
     format_size as qc_format_size,
 )
@@ -91,15 +89,13 @@ def main(page: ft.Page):
     user_cache_checkbox = ft.Checkbox(label="User Cache", value=True)
     system_logs_checkbox = ft.Checkbox(label="System Logs", value=True)
     trash_checkbox = ft.Checkbox(label="Trash", value=True)
-    ios_backups_checkbox = ft.Checkbox(label="iOS Backups", value=False)
-    macos_installers_checkbox = ft.Checkbox(label="macOS Installers", value=False)
-    xcode_derived_data_checkbox = ft.Checkbox(label="Xcode Derived Data", value=False)
-    ios_simulators_checkbox = ft.Checkbox(label="iOS Simulators", value=False)
+    ios_backups_checkbox = ft.Checkbox(label="iOS Backups", value=True)
+    macos_installers_checkbox = ft.Checkbox(label="macOS Installers", value=True)
+    xcode_derived_data_checkbox = ft.Checkbox(label="Xcode Derived Data", value=True)
+    ios_simulators_checkbox = ft.Checkbox(label="iOS Simulators", value=True)
     crash_reports_checkbox = ft.Checkbox(label="Crash Reports", value=True)
-    mail_attachments_checkbox = ft.Checkbox(label="Mail Attachments", value=False)
     temp_files_checkbox = ft.Checkbox(label="Temporary Files", value=True)
-    disk_images_checkbox = ft.Checkbox(label="Disk Images (.dmg)", value=False)
-    app_support_caches_checkbox = ft.Checkbox(label="App Support Caches", value=False)
+    app_support_caches_checkbox = ft.Checkbox(label="App Support Caches", value=True)
 
     analyze_button = ft.ElevatedButton(text="Analyze")
     clean_button = ft.ElevatedButton(text="Clean", disabled=True)
@@ -128,12 +124,8 @@ def main(page: ft.Page):
             cats.append(IOS_SIMULATORS)
         if crash_reports_checkbox.value:
             cats.append(CRASH_REPORTS)
-        if mail_attachments_checkbox.value:
-            cats.append(MAIL_ATTACHMENTS)
         if temp_files_checkbox.value:
             cats.append(TEMP_FILES)
-        if disk_images_checkbox.value:
-            cats.append(DISK_IMAGES)
         if app_support_caches_checkbox.value:
             cats.append(APP_SUPPORT_CACHES)
         return cats
@@ -301,8 +293,7 @@ def main(page: ft.Page):
             for idx, (cat, items, cat_size) in enumerate(analyze_quick_clean_iter(cats)):
                 current_result["category_map"][cat] = items
                 current_result["items"].extend(items)
-                for it in items:
-                    current_result["selected"].add(it.path)  # default selected
+                # Don't automatically select items - let user choose explicitly
                 category_folded[cat] = True  # Folded by default
                 # Update UI incrementally
                 try:
@@ -317,7 +308,7 @@ def main(page: ft.Page):
             # Final summary
             try:
                 total_size = sum(i.size for i in current_result["items"])
-                analysis_results_text.value = f"Found {qc_format_size(total_size)} of removable data"
+                analysis_results_text.value = f"Found {qc_format_size(total_size)} of removable data. Expand to see details."
                 progress_bar.visible = False
                 page.update()
             except Exception:
@@ -382,9 +373,7 @@ def main(page: ft.Page):
                     ),
                     ft.Column(
                         [
-                            mail_attachments_checkbox,
                             temp_files_checkbox,
-                            disk_images_checkbox,
                             app_support_caches_checkbox,
                         ],
                         spacing=5,
@@ -974,6 +963,40 @@ def main(page: ft.Page):
     # --- Settings Tab --- #
     settings_tab = create_settings_tab(page)
 
+    # --- License Tab --- #
+    def create_license_tab():
+        # Read the license file
+        license_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "LICENSE")
+        license_text = ""
+        try:
+            with open(license_path, 'r', encoding='utf-8') as f:
+                license_text = f.read()
+        except Exception as e:
+            license_text = f"Error reading license file: {e}"
+        
+        return ft.Column(
+            [
+                ft.Text("License", size=20, weight=ft.FontWeight.BOLD),
+                ft.Container(
+                    content=ft.Text(
+                        license_text,
+                        size=12,
+                        selectable=True,
+                        color=ft.Colors.BLACK87,
+                    ),
+                    border=ft.border.all(1, "#1F000000"),
+                    border_radius=5,
+                    padding=15,
+                    expand=True,
+                ),
+            ],
+            spacing=10,
+            alignment=ft.MainAxisAlignment.START,
+            expand=True,
+        )
+
+    license_tab = create_license_tab()
+
     # --- Main Layout --- #
     tabs = ft.Tabs(
         selected_index=0,
@@ -982,6 +1005,7 @@ def main(page: ft.Page):
             ft.Tab(text="Quick Clean", content=quick_clean_tab),
             ft.Tab(text="Disk Analyzer", content=disk_analyzer_tab),
             ft.Tab(text="Settings", content=settings_tab),
+            ft.Tab(text="License", content=license_tab),
         ],
         expand=True,
     )

@@ -2,6 +2,7 @@
 
 A powerful macOS utility application that provides two essential disk management features:
 
+- **AI**: Provides intelligent recommendations for file safety and cleanup. BYOK (Bring Your Own Key)
 - **Quick Clean**: Remove common junk files with a simple checkbox interface. If you are unsure if something is safe to delete, ask AI!
 - **Disk Analyzer**: Let's you scan/clean any directory on your macOS Machine.
 
@@ -19,7 +20,7 @@ A powerful macOS utility application that provides two essential disk management
 ## Features
 
 ### Quick Clean
-- ✅ One-click analysis and cleanup of common junk files
+- ✅ Easy analysis and cleanup of common junk files
 - ✅ Selective cleaning with checkboxes for different file types:
   - User Cache files
   - System Logs
@@ -184,7 +185,7 @@ coffeecleaner/
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under a modified MIT License that prohibits commercial use and distribution through app stores by anyone other than the original author. For full details, please refer to the [LICENSE](LICENSE) file.
 
 ## Disclaimer
 
