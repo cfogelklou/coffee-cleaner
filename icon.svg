@@ -1,0 +1,32 @@
+<svg width="256" height="256" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style="background-color: #f0f0f0; border-radius: 22px;">
+    <title>CoffeeCleaner Sweeping Bean Icon</title>
+    
+    <path d="M 10 50 Q 50 20 90 50 T 70 90" 
+          fill="#14B8A6" 
+          opacity="0.9">
+        <animateTransform 
+            attributeName="transform"
+            type="scale"
+            from="1"
+            to="1.05"
+            begin="0s"
+            dur="2s"
+            repeatCount="indefinite"
+            additive="sum"
+            values="1; 1.05; 1"
+        />
+    </path>
+
+    <path d="M 40 30 C 20 45, 20 75, 45 90 C 70 75, 70 45, 50 30 C 47 31, 44 32, 40 30 Z" 
+          fill="#44403C"/>
+    <path d="M 45 35 C 55 50, 55 70, 48 85" 
+          stroke="rgba(255, 255, 255, 0.3)" 
+          stroke-width="3" 
+          fill="none" 
+          stroke-linecap="round"/>
+
+    <rect x="75" y="35" width="5" height="5" fill="#44403C" opacity="0.2" transform="rotate(15 77.5 37.5)"/>
+    <rect x="85" y="45" width="8" height="8" fill="#44403C" opacity="0.3" transform="rotate(-10 89 49)"/>
+    <rect x="80" y="60" width="4" height="4" fill="#44403C" opacity="0.25" transform="rotate(5 82 62)"/>
+    <rect x="70" y="75" width="6" height="6" fill="#44403C" opacity="0.15" transform="rotate(-20 73 78)"/>
+</svg>

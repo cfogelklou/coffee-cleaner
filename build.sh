@@ -20,7 +20,8 @@ pyinstaller main.py \
     --name "CoffeeCleaner" \
     --windowed \
     --noconfirm \
-    --clean
+    --clean \
+    --icon "icon.icns"
 
 echo "--- Build complete ---"
 echo "The application bundle can be found in the 'dist' directory."

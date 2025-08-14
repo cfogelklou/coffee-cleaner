@@ -39,6 +39,19 @@ def main(page: ft.Page):
     page.window_width = 600
     page.window_height = 700
     page.window_resizable = True
+    
+    # Get the absolute path to the icon file
+    icon_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "icon.icns")
+    if os.path.exists(icon_path):
+        page.window_icon = icon_path
+    else:
+        debug_log(f"Icon file not found at: {icon_path}")
+    
+    # Prevent bouncing icon on macOS
+    page.window_always_on_top = False
+    page.window_skip_task_bar = False
+    page.window_focused = True
+    page.window_prevent_close = False
 
     # Set up logging
     log_filename = os.path.join(os.path.expanduser("~"), "Desktop", "mac_cleaner.log")
@@ -991,4 +1004,9 @@ def main(page: ft.Page):
 
 
 if __name__ == "__main__":
-    ft.app(target=main)
+    ft.app(
+        target=main,
+        view=ft.AppView.FLET_APP,
+        port=0,  # Use random available port
+        web_renderer=ft.WebRenderer.HTML,
+    )
